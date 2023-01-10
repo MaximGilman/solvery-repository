@@ -1,9 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace threads._01._2023;
 
-public class Task8_Pi_parallel_calc
+public static class Task8_PiParallelCalc
 {
     private const int MAX_THREAD_COUNT = 10;
     private static long MAX_ITER_COUNT = 200_000_000;
@@ -15,13 +14,14 @@ public class Task8_Pi_parallel_calc
 
     public static async Task Execute()
     {
+        Console.WriteLine("Вывод в консоль отключен. Примерное время выполнения с пустой консолью - 10 секунд.");
         // В 1 поток. ~ = за 8 секунд.
 
         // stopWatch.Start();
         // DoStep();
         // stopWatch.Stop();
-        // Console.WriteLine(pi * 4);
-        // Console.WriteLine(stopWatch.Elapsed);
+        // Console.WriteLine($"Ответ: {pi * 4}");
+        // Console.WriteLine($"Потраченное время: {stopWatch.Elapsed}");
 
         // В N потоков - из-за локов время даже дольше - 9 сек. Без партиций 13.
 
@@ -31,8 +31,8 @@ public class Task8_Pi_parallel_calc
         await Task.WhenAll(tasks).ContinueWith(_ =>
         {
             stopWatch.Stop();
-            Console.WriteLine(pi * 4);
-            Console.WriteLine(stopWatch.Elapsed);
+            Console.WriteLine($"Ответ: {pi * 4}");
+            Console.WriteLine($"Потраченное время: {stopWatch.Elapsed}");
         });
     }
 

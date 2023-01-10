@@ -5,10 +5,16 @@ static class Program
     public static async Task Main()
     {
         // 1е задание
-        // Task1_Create_child_thread.Execute();
+        Console.WriteLine("Задание 1");
+        Task1_CreateChildThread.Execute();
+        Console.WriteLine("\nЗадание 1 - завершено. Ожидается ввод для продолжения\n");
+        Console.ReadLine();
+        Console.Clear();
         
         // 8e задание
-        await Task8_Pi_parallel_calc.Execute();
+        Console.WriteLine("Задание 8\n");
+        await Task8_PiParallelCalc.Execute();
+        Console.WriteLine("Задание 8 - завершено.");
 
     }
     
