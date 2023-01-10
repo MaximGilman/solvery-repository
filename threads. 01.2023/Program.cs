@@ -2,12 +2,13 @@
 
 static class Program
 {
-    public static void Main()
+    public static async Task Main()
     {
         // 1е задание
-        Task1_Create_child_thread.Execute();
+        // Task1_Create_child_thread.Execute();
         
-        //
+        // 8e задание
+        await Task8_Pi_parallel_calc.Execute();
 
     }
     
