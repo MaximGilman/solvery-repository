@@ -1,30 +1,31 @@
 ﻿#region simple-thread
 
-class Program
-{
-    private static readonly List<int> Collection = Enumerable.Range(0, 10).ToList();
-    private static List<int>.Enumerator _enumerator = Collection.GetEnumerator();
-    private static readonly object BalanceLock = new();
+using System.Collections.Concurrent;
 
+namespace threads._01._2023;
+
+static class Program
+{
     public static void Main()
     {
-        Console.WriteLine($"Parent thread ID: {Environment.CurrentManagedThreadId} \n");
-
-        var mainTask = new Task(MyLockedAction);
-        var childTask = Task.Run(MyLockedAction);
-        mainTask.RunSynchronously();
-
-        Task.WaitAll(childTask, mainTask);
-    }
-
-    private static void MyLockedAction()
-    {
-            lock (BalanceLock)
+        using (BlockingCollection<int> collection = new BlockingCollection<int>() { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 })
+        {
+            Action read = () =>
             {
-                if (_enumerator.MoveNext())
-                    Console.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}. Value: {_enumerator.Current}");
-            }
+                while (collection.TryTake(out var item))
+                    Console.WriteLine($"Thread ID: {Environment.CurrentManagedThreadId}. Value: {item}");
+            };
+            
+            Console.WriteLine($"Parent thread ID: {Environment.CurrentManagedThreadId} \n");
+
+            var mainTask = new Task(read);
+            var childTask = Task.Run(read);
+            mainTask.RunSynchronously();
+
+            Task.WaitAll(childTask, mainTask);
+        }
     }
+    
 }
 
 # endregion
