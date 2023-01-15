@@ -2,59 +2,51 @@
 
 namespace threads._01._2023;
 
-public static class Task8_PiParallelCalc
+public class Task8_PiParallelCalc
 {
-    private const int MAX_THREAD_COUNT = 10;
-    private static long MAX_ITER_COUNT = 200_000_000;
-    private static long currentIterId = 0;
-    private static double pi = 1;
-    private static object piLock = new object();
-    static readonly Stopwatch stopWatch = new Stopwatch();
-
+    private const int MAX_THREAD_COUNT = 50;
+    private const long MAX_ITER_COUNT = 200_000_000;
+    private static object locked = new();
 
     public static async Task Execute()
     {
-        Console.WriteLine("Вывод в консоль отключен. Примерное время выполнения с пустой консолью - 10 секунд.");
+        double pi = 1;
+
         // В 1 поток. ~ = за 8 секунд.
 
-        // stopWatch.Start();
-        // DoStep();
-        // stopWatch.Stop();
-        // Console.WriteLine($"Ответ: {pi * 4}");
-        // Console.WriteLine($"Потраченное время: {stopWatch.Elapsed}");
+        var workItems = Enumerable.Range(1, MAX_THREAD_COUNT);
+        var workingGroups =
+            workItems.Select((x, i) => new { minValue = CalcGroupNumber(x - 1), maxValue = CalcGroupNumber(x) });
 
-        // В N потоков - из-за локов время даже дольше - 9 сек. Без партиций 13.
-
-        stopWatch.Restart();
-        var tasks = Enumerable.Range(1, MAX_THREAD_COUNT + 1).Select(x => Task.Run(() => DoStep(x)));
-
-        await Task.WhenAll(tasks).ContinueWith(_ =>
+        // Thread'ы создаются в foreground - их можно не ждать.
+        // x - maxValue
+        var threads = workingGroups.Select(x => new Thread(() => DoStep(x.minValue, x.maxValue, ref pi)))
+            .ToList();
+        threads.ForEach(x =>
         {
-            stopWatch.Stop();
-            Console.WriteLine($"Ответ: {pi * 4}");
-            Console.WriteLine($"Потраченное время: {stopWatch.Elapsed}");
+            x.Start();
+            x.Join();
         });
+
+        // Thread.Sleep(10000);
+        Console.WriteLine(pi * 4);
     }
 
-    /// <summary>
-    /// Выполнение шага расчета Пи.
-    /// </summary>
-    /// <param name="threadIndex">Индекс потока среди остальных обработчиков. По нему партицируем инкременты</param>
-    private static void DoStep(int threadIndex = 1)
+    private static void DoStep(int minValue, int maxValue, ref double pi)
     {
-        while (Interlocked.Increment(ref currentIterId) is var currentThreadIterId &&
-               currentThreadIterId < MAX_ITER_COUNT / threadIndex)
+        double piValue = 0;
+        while (minValue++ < maxValue)
         {
-            // Убрал вывод, т.к. заметно замедляет
-            // Console.WriteLine($"Current thread ID: {Environment.CurrentManagedThreadId}. Current iteration: {currentThreadIterId}/{MAX_ITER_COUNT}");
-
-            var addedValue = 1.0 / (currentThreadIterId * 4.0 + 1.0);
-            var minusValue = 1.0 / (currentThreadIterId * 4.0 - 1.0);
-            lock (piLock)
-            {
-                pi += addedValue;
-                pi -= minusValue;
-            }
+            piValue += 1.0 / (minValue * 4.0 + 1.0);
+            piValue -= 1.0 / (minValue * 4.0 - 1.0);
         }
+
+        ;
+
+
+        pi += piValue;
     }
+
+    private static int CalcGroupNumber(int itemIndex) => (int)(MAX_ITER_COUNT / MAX_THREAD_COUNT) * (itemIndex);
+    private static bool IsInGroup(int itemIndex, int groupNumber) => itemIndex <= groupNumber;
 }
