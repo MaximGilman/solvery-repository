@@ -4,19 +4,11 @@ static class Program
 {
     public static async Task Main()
     {
-        // 1е задание
-        Console.WriteLine("Задание 1");
-        Task1_CreateChildThread.Execute();
-        Console.WriteLine("\nЗадание 1 - завершено. Ожидается ввод для продолжения\n");
-        Console.ReadLine();
-        Console.Clear();
-        
         // 8e задание
-        Console.WriteLine("Задание 8\n");
-        await Task8_PiParallelCalc.Execute();
-        Console.WriteLine("Задание 8 - завершено.");
+       Console.WriteLine(Task8PiParallelCalc.CalculatePi());
 
+        var randomStrings = Enumerable.Range(1, 100).Select(x => string.Join("",Enumerable.Repeat($"{x}", 100 / x))).ToList();
+        Task6SleepSort.SleepSort(randomStrings);
     }
-    
 }
 
