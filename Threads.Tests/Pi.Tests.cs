@@ -11,7 +11,7 @@ public class PiTests
     [InlineData(0, 1)]
     [InlineData(0, 0)]
 
-    public void CalcPiTest_Errors(int threadCount, int iterationsCount)
+    public void CalcPiTest_Error(int threadCount, int iterationsCount)
     {
         Assert.Throws<ArgumentException>(() => Task8PiParallelCalc.CalculatePi(threadCount, iterationsCount));
     }

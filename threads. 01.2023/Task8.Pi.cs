@@ -9,8 +9,8 @@ public static class Task8PiParallelCalc
 
     public static double CalculatePi(int threadCount = ThreadCount, int iterationCount = IterationsCount)
     {
-        Guard.GuardIsNotDefault(threadCount);
-        Guard.GuardIsNotDefault(iterationCount);
+        Guard.IsNotDefault(threadCount);
+        Guard.IsNotDefault(iterationCount);
         
         double pi = 1;
 

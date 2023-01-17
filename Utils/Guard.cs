@@ -8,7 +8,7 @@ public static class Guard
     /// <typeparam name="T">Тип значения.</typeparam>
     /// <param name="expectedValue">Текущее значение.</param>
     /// <param name="valueToCompare">Значение для сравнения.</param>
-    public static void GuardIsNotEqual<T>(T? expectedValue, T? valueToCompare)
+    public static void IsNotEqual<T>(T? expectedValue, T? valueToCompare)
     {
         if (expectedValue?.Equals(valueToCompare) == true)
         {
@@ -21,11 +21,23 @@ public static class Guard
     /// </summary>
     /// <typeparam name="T">Тип значения.</typeparam>
     /// <param name="expectedValue">Текущее значение.</param>
-    public static void GuardIsNotDefault<T>(T? expectedValue)
+    public static void IsNotDefault<T>(T? expectedValue)
     {
         if (expectedValue?.Equals(default(T)) == true)
         {
-            throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию");
+            throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию", nameof(expectedValue));
+        }
+    }
+    
+    /// <summary>
+    /// Проверить, что коллекция не пустая.
+    /// </summary>
+    /// <typeparam name="T">Тип элемента коллекции.</typeparam>
+    public static void IsNotEmpty<T>(IEnumerable<T> collection)
+    {
+        if (!collection.Any())
+        {
+            throw new ArgumentException($"Коллекция не должна быть пустой", nameof(collection));
         }
     }
 }
