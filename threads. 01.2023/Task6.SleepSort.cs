@@ -1,9 +1,9 @@
-﻿namespace threads._01._2023;
+﻿namespace Threads;
 
-internal static class Task6SleepSort
+public static class Task6SleepSort
 {
-    private const int ProportionalityFactor = 50;
-    internal static void SleepSort(List<string> items)
+    public const int ProportionalityFactor = 50;
+    public static void SleepSort(List<string> items)
     {
         items.ForEach(x =>
         {

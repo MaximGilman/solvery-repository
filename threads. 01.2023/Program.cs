@@ -1,14 +1,10 @@
-﻿namespace threads._01._2023;
+﻿namespace Threads;
 
-static class Program
+internal static class Program
 {
-    public static async Task Main()
+    internal static void Main()
     {
-        // 8e задание
-       Console.WriteLine(Task8PiParallelCalc.CalculatePi());
-
-        var randomStrings = Enumerable.Range(1, 100).Select(x => string.Join("",Enumerable.Repeat($"{x}", 100 / x))).ToList();
-        Task6SleepSort.SleepSort(randomStrings);
+        Console.Write(Task8PiParallelCalc.CalculatePi());
     }
 }
 
