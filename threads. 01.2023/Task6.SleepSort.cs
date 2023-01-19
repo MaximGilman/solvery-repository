@@ -1,25 +1,26 @@
-﻿using Utils;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 
-namespace Threads;
-
-public static class Task6SleepSort
+namespace Threads
 {
-    public const int ProportionalityFactor = 50;
-    public static void SleepSort(IEnumerable<string> items)
+    public static class Task6SleepSort
     {
-        Guard.IsNotDefault(items);
-        Guard.IsNotEmpty(items);
-        
-        items.ToList().ForEach(x =>
+        public const int ProportionalityFactor = 50;
+        public static void SleepSort(IEnumerable<string> items)
         {
-            var sleepThread = new Thread(() => HandleItem(x));
-            sleepThread.Start();
-        });
-    }
+            foreach (var item in items)
+            {
+                var sleepThread = new Thread(() => HandleItem(item));
+                sleepThread.Start();
+            }
+        
+        }
 
-    private static void HandleItem(string item)
-    {
-        Thread.Sleep(item.Length * ProportionalityFactor);
-        Console.WriteLine(item);
+        private static void HandleItem(string item)
+        {
+            Thread.Sleep(item.Length * ProportionalityFactor);
+            Console.WriteLine(item);
+        }
     }
 }

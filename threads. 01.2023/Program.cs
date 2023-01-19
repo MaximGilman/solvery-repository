@@ -1,10 +1,13 @@
-﻿namespace Threads;
+﻿using System;
 
-internal static class Program
+namespace Threads
 {
-    internal static void Main()
+    internal static class Program
     {
-        Console.Write(Task8PiParallelCalc.CalculatePi());
+        internal static void Main()
+        {
+            Console.Write(Task8PiParallelCalc.CalculatePi());
+        }
     }
 }
 
