@@ -21,9 +21,9 @@ namespace Threads
             // По часовой, соответсвтвенно, ph1 -> f1 -> ph2 -> f2 и т.д.
             var ph1 = new PhilosopherData() {Id = 1, Left = fork1, Right = fork5};
             var ph2 = new PhilosopherData() {Id = 2, Left = fork2, Right = fork1};
-            var ph3 = new PhilosopherData() {Id = 3, Left = fork2, Right = fork3};
-            var ph4 = new PhilosopherData() {Id = 4, Left = fork3, Right = fork4};
-            var ph5 = new PhilosopherData() {Id = 5, Left = fork4, Right = fork5};
+            var ph3 = new PhilosopherData() {Id = 3, Left = fork2, Right = fork2};
+            var ph4 = new PhilosopherData() {Id = 4, Left = fork4, Right = fork3};
+            var ph5 = new PhilosopherData() {Id = 5, Left = fork5, Right = fork4};
 
             var thread1 = new Thread(() => ph1.Meal());
             var thread2 = new Thread(() => ph2.Meal());
