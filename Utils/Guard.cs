@@ -45,5 +45,17 @@ namespace Utils
                 throw new ArgumentException($"Коллекция не должна быть пустой", nameof(collection));
             }
         }
+        
+        /// <summary>
+        /// Проверить, что значение меньше или равно.
+        /// </summary>
+        /// <typeparam name="T">Тип элемента коллекции.</typeparam>
+        public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
+        {
+            if (first.CompareTo(second) > 0)
+            {
+                throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
+            }
+        }
     }
 }
