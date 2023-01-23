@@ -2,6 +2,7 @@ using System;
 using System.Configuration;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic.CompilerServices;
 using Utils;
 
@@ -44,10 +45,15 @@ namespace Threads
 
     internal class PhilosopherData
     {
+        private readonly int _id;
         internal int Id
         {
-            private get => Id;
-            init => Guard.IsLessOrEqual(value, PhilosophersCount);
+             get => _id ;
+             init
+             {
+                 Guard.IsLessOrEqual(value, PhilosophersCount);
+                 _id = value;
+             }
         }
 
         /// <summary>
@@ -68,9 +74,8 @@ namespace Threads
         /// <summary>
         /// Флаг, указывающий, выводить ли информацию в консоль.
         /// </summary>
-        private static readonly bool IsDebug = 
-            bool.TryParse(ConfigurationManager.AppSettings["isDebug"], out bool isDebugSettings) 
-            && isDebugSettings;
+        // TODO: Получить данные из конфига.
+        private static readonly bool IsDebug = true;
         
         private readonly Random _rand = new ();
 
@@ -95,15 +100,15 @@ namespace Threads
                 TryTakeLeftFork();
                 if (_shouldISkip)
                 {
-                    _shouldISkip = false;
-                    Meal();
+                    _shouldISkip = false; 
+                    return;
                 }
 
                 TryTakeRightFork();
                 if (_shouldISkip)
                 {
-                    _shouldISkip = false;
-                    Meal();
+                    _shouldISkip = false; 
+                    return;
                 }
 
                 Wait("eating");
