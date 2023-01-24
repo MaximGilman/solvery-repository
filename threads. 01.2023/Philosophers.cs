@@ -22,7 +22,7 @@ namespace Threads
             // По часовой, соответсвтвенно, ph1 -> f1 -> ph2 -> f2 и т.д.
             var ph1 = new PhilosopherData() {Id = 1, Left = fork1, Right = fork5};
             var ph2 = new PhilosopherData() {Id = 2, Left = fork2, Right = fork1};
-            var ph3 = new PhilosopherData() {Id = 3, Left = fork2, Right = fork2};
+            var ph3 = new PhilosopherData() {Id = 3, Left = fork3, Right = fork2};
             var ph4 = new PhilosopherData() {Id = 4, Left = fork4, Right = fork3};
             var ph5 = new PhilosopherData() {Id = 5, Left = fork5, Right = fork4};
 
@@ -104,6 +104,8 @@ namespace Threads
                     return;
                 }
 
+                // Генерация дэдлока - ждем пока все возьмут левую вилку.
+                // Thread.Sleep(5000);
                 TryTakeRightFork();
                 if (_shouldISkip)
                 {
@@ -120,9 +122,10 @@ namespace Threads
 
         private void TryTakeLeftFork()
         {
+            if (IsDebug)
+                Console.WriteLine($"Philosopher {Id} wait left fork");
             // Если поток попытается взять вилку слева, а она будет занята - пусть ожидает.
             Left.WaitOne();
-            
             if (IsDebug)
                 Console.WriteLine($"Philosopher {Id} took left fork");
         }
@@ -134,6 +137,8 @@ namespace Threads
 
             while (true)
             {
+                if (IsDebug)
+                    Console.WriteLine($"Philosopher {Id} wait right fork");
                 if (Right.WaitOne(_rand.Next(1000)))
                 {
                     // Правая вилка взята.
@@ -155,7 +160,9 @@ namespace Threads
                         _shouldISkip = true;
                         Left.ReleaseMutex();
                         // За то, что "пропустил" вперед - его приоритет поднимается, в след. раз он пойдет раньше.
-                        Priorities[Id -1] += PhilosophersCount;
+                        Priorities[Id -1] += PhilosophersCount; 
+                        Console.WriteLine($"Deadlock: Philosopher {Id} returning both forks");
+
                         return;
                     }
                     
@@ -168,13 +175,15 @@ namespace Threads
         
         private void ReleaseForks()
         {
+            if (IsDebug)
+                Console.WriteLine($"Philosopher {Id} return forks");
             Left.ReleaseMutex();
             Right.ReleaseMutex();
         }
 
         private void Wait(string waitingClause = "thinking")
         {
-            var sleepPeriod = _rand.Next(5000);
+            var sleepPeriod = _rand.Next(1000);
             if (IsDebug)
                 Console.WriteLine($"Philosopher {Id} {waitingClause} for {sleepPeriod}");
             Thread.Sleep(sleepPeriod);
