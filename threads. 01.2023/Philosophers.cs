@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Utils;
 
 namespace Threads
@@ -9,7 +8,7 @@ namespace Threads
         internal static void Execute()
         {
             var forks = Enumerable.Repeat(new object(), PhilosophersCount).ToList();
-            var philosophers = forks.Select((_, i) => new PhilosopherData(forks, i));
+            var philosophers = forks.Select((_, i) => new Philosopher(forks, i));
             var threads = philosophers.Select(x => new Thread(x.Meal));
 
             Console.WriteLine("Start meals");
@@ -20,7 +19,7 @@ namespace Threads
         }
     }
 
-    internal class PhilosopherData
+    internal class Philosopher 
     {
         private int Id { get; }
 
@@ -34,17 +33,12 @@ namespace Threads
         /// </summary>
         private object Right { get; }
 
-        /// <summary>
-        /// Флаг, указывающий, выводить ли информацию в консоль.
-        /// </summary>
-        private static readonly bool IsDebug = ConfigurationProvider.GetValue<bool>("isDebug");
-
         private readonly Random _rand = new();
 
         private readonly Mutex _preventDeadlock = new Mutex();
         private static long _forksPreDeadlockCount = 0;
 
-        internal PhilosopherData(IReadOnlyList<object> forks, int id)
+        internal Philosopher(IReadOnlyList<object> forks, int id)
         {
             Left = forks[id];
             Right = forks[(id + 1) % forks.Count];
@@ -71,7 +65,7 @@ namespace Threads
 
         private void ReleaseForks()
         {
-            WriteEvent($"Philosopher {Id} is about to release forks");
+            ConsoleWriter.WriteEvent($"Philosopher {Id} is about to release forks");
             if (Interlocked.Read(ref _forksPreDeadlockCount) == Philosophers.PhilosophersCount)
             {
                 Interlocked.Decrement(ref _forksPreDeadlockCount);
@@ -93,29 +87,20 @@ namespace Threads
 
         private void TryTakeOrWait()
         {
-            WriteEvent($"Philosopher {Id} took forks");
+            ConsoleWriter.WriteEvent($"Philosopher {Id} took forks");
             Interlocked.Increment(ref _forksPreDeadlockCount);
             if (Interlocked.Read(ref _forksPreDeadlockCount) == Philosophers.PhilosophersCount)
             {
                 _preventDeadlock.WaitOne();
-                WriteEvent($"Philosopher {Id} waits to avoid deadlock");
+                ConsoleWriter.WriteEvent($"Philosopher {Id} waits to avoid deadlock");
             }
         }
 
         private void Wait(string waitingClause)
         {
             var sleepPeriod = _rand.Next(1000);
-            WriteEvent($"Philosopher {Id} {waitingClause} for {sleepPeriod}");
+            ConsoleWriter.WriteEvent($"Philosopher {Id} {waitingClause} for {sleepPeriod}");
             Thread.Sleep(sleepPeriod);
-        }
-
-
-        private static void WriteEvent(string message)
-        {
-            if (IsDebug)
-            {
-                Console.WriteLine(message);
-            }
         }
     }
 }
