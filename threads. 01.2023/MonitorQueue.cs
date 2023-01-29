@@ -51,15 +51,13 @@ internal static class ThreadSafeQueue
 
     internal static int Enqueue(string item)
     {
+        if (_isDropped)
+        {
+            return 0;
+        }
 
         lock (LockTarget)
         {
-            if (_isDropped)
-            {
-                Monitor.PulseAll(LockTarget);
-                return 0;
-            }
-
             var croppedString = item.CropUpToLength(MessageMaxLength);
 
             if (_count == MaxLength)
@@ -81,16 +79,14 @@ internal static class ThreadSafeQueue
 
     internal static int Dequeue(out string item)
     {
+        if (_isDropped)
+        {
+            item = string.Empty;
+            return 0;
+        }
 
         lock (LockTarget)
         {
-            if (_isDropped)
-            {
-                item = string.Empty;
-                Monitor.PulseAll(LockTarget);
-                return 0;
-            }
-
             if (_count == MaxLength)
             {
                 Monitor.PulseAll(LockTarget);
@@ -113,6 +109,10 @@ internal static class ThreadSafeQueue
     internal static void Drop()
     {
         _isDropped = true;
+        lock (LockTarget)
+        {
+            Monitor.PulseAll(LockTarget);
+        }
         ConsoleWriter.WriteEvent("Queue Dropped!");
     }
 }
@@ -126,9 +126,10 @@ internal class QueueHandler
     {
         foreach (var message in messages)
         {
+            var threadSpecificMessage = $"{Id}_{message}";
             Thread.Sleep(100);
-            ConsoleWriter.WriteEvent($"Writer {Id} pushing new value: {message.CropUpToLength(MessageCropLength)}...");
-            var messageLength = ThreadSafeQueue.Enqueue(message);
+            ConsoleWriter.WriteEvent($"Writer {Id} try to push new value: {threadSpecificMessage.CropUpToLength(MessageCropLength)}...");
+            var messageLength = ThreadSafeQueue.Enqueue(threadSpecificMessage);
             if (messageLength == 0)
             {
                 ConsoleWriter.WriteEvent($"Writer {Id} exited due to drop");
@@ -146,14 +147,16 @@ internal class QueueHandler
         {
             ConsoleWriter.WriteEvent($"Reader {Id} waiting value.");
             var messageLength = ThreadSafeQueue.Dequeue(out var message);
-            ConsoleWriter.WriteEvent(
-                $"Reader {Id} read value {message.CropUpToLength(MessageCropLength)}... with length of {messageLength}");
-
             if (message.Length == 0)
             {
                 ConsoleWriter.WriteEvent($"Reader {Id} exited due to drop");
                 return;
             }
+
+            ConsoleWriter.WriteEvent(
+                $"Reader {Id} read value {message.CropUpToLength(MessageCropLength)}... with length of {messageLength}");
+
+
         }
     }
 }
