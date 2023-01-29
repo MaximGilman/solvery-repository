@@ -14,6 +14,12 @@ internal static class MonitorQueue
 
         var readers = handlers[..2];
         var writers = handlers[2..];
+        var dropper = new Thread(() =>
+        {
+            Thread.Sleep(700);
+            ThreadSafeQueue.Drop();
+        });
+        dropper.Start();
 
         foreach (var reader in readers)
         {
@@ -26,12 +32,9 @@ internal static class MonitorQueue
             var writerInnerMessages = Enumerable.Range(0, MessagesCount).Select(x => x.ToString());
             var thread = new Thread(() => writer.HandleWrite(writerInnerMessages));
             thread.Start();
-            thread.Join();
         }
 
 
-        Thread.Sleep(1000);
-        ThreadSafeQueue.Drop();
     }
 }
 
@@ -42,31 +45,33 @@ internal static class ThreadSafeQueue
 
     private static readonly string[] Items = new string[MaxLength];
     private static readonly object LockTarget = new();
-    private static readonly object IsNotEmpty = new();
-    private static readonly object IsNotFull = new();
 
     private static bool _isDropped = false;
     private static int _head, _tail, _count = 0;
 
     internal static int Enqueue(string item)
     {
-        if (_isDropped)
-        {
-            return 0;
-        }
 
         lock (LockTarget)
         {
+            if (_isDropped)
+            {
+                Monitor.PulseAll(LockTarget);
+                return 0;
+            }
+
             var croppedString = item.CropUpToLength(MessageMaxLength);
 
             if (_count == MaxLength)
             {
-                Monitor.Wait(IsNotFull);
+                Monitor.Wait(LockTarget);
             }
+
             if (_count == 1)
             {
-                Monitor.PulseAll(IsNotEmpty);
+                Monitor.PulseAll(LockTarget);
             }
+
             _head = (_head + 1) % MaxLength;
             Items[_head] = croppedString;
             _count++;
@@ -76,22 +81,24 @@ internal static class ThreadSafeQueue
 
     internal static int Dequeue(out string item)
     {
-        if (_isDropped)
-        {
-            item = "";
-            return 0;
-        }
 
         lock (LockTarget)
         {
+            if (_isDropped)
+            {
+                item = string.Empty;
+                Monitor.PulseAll(LockTarget);
+                return 0;
+            }
+
             if (_count == MaxLength)
             {
-                Monitor.PulseAll(IsNotFull);
+                Monitor.PulseAll(LockTarget);
             }
 
             if (_count == 0)
             {
-                Monitor.Wait(IsNotEmpty);
+                Monitor.Wait(LockTarget);
             }
 
             _tail = (_tail + 1) % MaxLength;
@@ -106,9 +113,7 @@ internal static class ThreadSafeQueue
     internal static void Drop()
     {
         _isDropped = true;
-        Monitor.Exit(IsNotEmpty);
-        Monitor.Exit(IsNotFull);
-        Monitor.Exit(LockTarget);
+        ConsoleWriter.WriteEvent("Queue Dropped!");
     }
 }
 
@@ -121,8 +126,15 @@ internal class QueueHandler
     {
         foreach (var message in messages)
         {
+            Thread.Sleep(100);
             ConsoleWriter.WriteEvent($"Writer {Id} pushing new value: {message.CropUpToLength(MessageCropLength)}...");
             var messageLength = ThreadSafeQueue.Enqueue(message);
+            if (messageLength == 0)
+            {
+                ConsoleWriter.WriteEvent($"Writer {Id} exited due to drop");
+                return;
+            }
+
             ConsoleWriter.WriteEvent($"Writer {Id} pushed value with length {messageLength}.");
 
         }
@@ -132,10 +144,16 @@ internal class QueueHandler
     {
         while (true)
         {
-            ConsoleWriter.WriteEvent($"Reader {Id} reading value.");
+            ConsoleWriter.WriteEvent($"Reader {Id} waiting value.");
             var messageLength = ThreadSafeQueue.Dequeue(out var message);
             ConsoleWriter.WriteEvent(
                 $"Reader {Id} read value {message.CropUpToLength(MessageCropLength)}... with length of {messageLength}");
+
+            if (message.Length == 0)
+            {
+                ConsoleWriter.WriteEvent($"Reader {Id} exited due to drop");
+                return;
+            }
         }
     }
 }
