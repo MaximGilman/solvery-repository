@@ -1,68 +1,38 @@
+using Microsoft.Extensions.Logging;
 using Utils;
 
 namespace Threads
 {
     internal static class Philosophers
     {
+        internal const int PhilosophersCount = 5;
         internal static void Execute()
         {
-            Mutex fork1 = new();
-            Mutex fork2 = new();
-            Mutex fork3 = new();
-            Mutex fork4 = new();
-            Mutex fork5 = new();
+            var forks = Enumerable.Repeat(new object(), PhilosophersCount).ToList();
+            var philosophers = forks.Select((_, i) => new PhilosopherData(forks, i));
+            var threads = philosophers.Select(x => new Thread(x.Meal));
 
-            // В самом верху сидит философ 1. Слева от него лежит вилка 1. Справа вилка 5.
-            // По часовой, соответсвтвенно, ph1 -> f1 -> ph2 -> f2 и т.д.
-            var ph1 = new PhilosopherData() { Id = 1, Left = fork1, Right = fork5 };
-            var ph2 = new PhilosopherData() { Id = 2, Left = fork2, Right = fork1 };
-            var ph3 = new PhilosopherData() { Id = 3, Left = fork3, Right = fork2 };
-            var ph4 = new PhilosopherData() { Id = 4, Left = fork4, Right = fork3 };
-            var ph5 = new PhilosopherData() { Id = 5, Left = fork5, Right = fork4 };
-
-            var thread1 = new Thread(() => ph1.Meal());
-            var thread2 = new Thread(() => ph2.Meal());
-            var thread3 = new Thread(() => ph3.Meal());
-            var thread4 = new Thread(() => ph4.Meal());
-            var thread5 = new Thread(() => ph5.Meal());
-
-            // Считаем, что едят бесконечно.
-            thread1.Start();
-            thread2.Start();
-            thread3.Start();
-            thread4.Start();
-            thread5.Start();
+            Console.WriteLine("Start meals");
+            foreach (var thread in threads)
+            {
+                thread.Start();
+            }
         }
     }
 
     internal class PhilosopherData
     {
-        private readonly int _id;
-
-        internal int Id
-        {
-            get => _id;
-            init
-            {
-                Guard.IsLessOrEqual(value, PhilosophersCount);
-                _id = value;
-            }
-        }
+        private int Id { get; }
 
         /// <summary>
         /// Правая вилка.
         /// </summary>
-        internal Mutex Left { get; init; }
+        private object Left { get; }
 
         /// <summary>
         /// Левая вилка.
         /// </summary>
-        internal Mutex Right { get; init; }
-
-        /// <summary>
-        /// Флаг, что нужно пропустить другие потоки - не брать следующие вилки, а подождать.
-        /// </summary>
-        private bool _shouldISkip = false;
+        private object Right { get; }
 
         /// <summary>
         /// Флаг, указывающий, выводить ли информацию в консоль.
@@ -71,114 +41,81 @@ namespace Threads
 
         private readonly Random _rand = new();
 
-        /// <summary>
-        /// Количество ожидающих потоков. Если равно количеству - значит дэдлок.
-        /// </summary>
-        private static long _waitingCount = 0;
+        private readonly Mutex _preventDeadlock = new Mutex();
+        private static long _forksPreDeadlockCount = 0;
 
-        /// <summary>
-        /// Приоритеты, для будущих "торгов" при дедлоках.
-        /// </summary>
-        private static readonly int[] Priorities = { 1, 2, 3, 4, 5 };
-
-        private const int PhilosophersCount = 5;
+        internal PhilosopherData(IReadOnlyList<object> forks, int id)
+        {
+            Left = forks[id];
+            Right = forks[(id + 1) % forks.Count];
+            Id = id;
+        }
 
 
         internal void Meal()
         {
             while (true)
             {
-                Wait();
-                TryTakeLeftFork();
-                if (_shouldISkip)
+                Wait("thinking");
+                TryTakeOrWait();
+                lock (Left)
+                lock (Right)
                 {
-                    _shouldISkip = false;
-                    return;
+                    Wait("eating");
                 }
 
-                // Генерация дэдлока - ждем пока все возьмут левую вилку.
-                // Thread.Sleep(5000);
-                TryTakeRightFork();
-                if (_shouldISkip)
-                {
-                    _shouldISkip = false;
-                    return;
-                }
-
-                Wait("eating");
                 ReleaseForks();
-                Priorities[Id - 1] = Id;
             }
-
-            return;
         }
 
-        private void TryTakeLeftFork()
-        {
-            if (IsDebug)
-                Console.WriteLine($"Philosopher {Id} wait left fork");
-            // Если поток попытается взять вилку слева, а она будет занята - пусть ожидает.
-            Left.WaitOne();
-            if (IsDebug)
-                Console.WriteLine($"Philosopher {Id} took left fork");
-        }
-
-        private void TryTakeRightFork()
-        {
-            // Поток уже держит левую вилку, помечаем его, как ожидающий.
-            Interlocked.Increment(ref _waitingCount);
-
-            while (true)
-            {
-                if (IsDebug)
-                    Console.WriteLine($"Philosopher {Id} wait right fork");
-                if (Right.WaitOne(_rand.Next(1000)))
-                {
-                    // Правая вилка взята.
-                    if (IsDebug)
-                        Console.WriteLine($"Philosopher {Id} took right fork");
-                    break;
-                }
-                else
-                {
-                    var waitingCount = Interlocked.Read(ref _waitingCount);
-
-                    // Если правая вилка занята и все потоки ждут - значит дэдлок.
-                    if (waitingCount == PhilosophersCount && Priorities.Min() == Priorities[Id - 1])
-                    {
-                        // Поток перестает считаться ожидающим.
-                        Interlocked.Decrement(ref _waitingCount);
-                        // В этом случае самый "неприоритетный" поток отпускает первую вилку.
-                        _shouldISkip = true;
-                        Left.ReleaseMutex();
-                        // За то, что "пропустил" вперед - его приоритет поднимается, в след. раз он пойдет раньше.
-                        Priorities[Id - 1] += PhilosophersCount;
-                        Console.WriteLine($"Deadlock: Philosopher {Id} returning both forks");
-
-                        return;
-                    }
-
-                    // Если дэдлока нет - продолжаем ждать.
-                }
-            }
-
-            Interlocked.Decrement(ref _waitingCount);
-        }
 
         private void ReleaseForks()
         {
-            if (IsDebug)
-                Console.WriteLine($"Philosopher {Id} return forks");
-            Left.ReleaseMutex();
-            Right.ReleaseMutex();
+            WriteEvent($"Philosopher {Id} is about to release forks");
+            if (Interlocked.Read(ref _forksPreDeadlockCount) == Philosophers.PhilosophersCount)
+            {
+                Interlocked.Decrement(ref _forksPreDeadlockCount);
+                try
+                {
+                    _preventDeadlock.ReleaseMutex();
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+            else
+            {
+                Interlocked.Decrement(ref _forksPreDeadlockCount);
+            }
         }
 
-        private void Wait(string waitingClause = "thinking")
+
+        private void TryTakeOrWait()
+        {
+            WriteEvent($"Philosopher {Id} took forks");
+            Interlocked.Increment(ref _forksPreDeadlockCount);
+            if (Interlocked.Read(ref _forksPreDeadlockCount) == Philosophers.PhilosophersCount)
+            {
+                _preventDeadlock.WaitOne();
+                WriteEvent($"Philosopher {Id} waits to avoid deadlock");
+            }
+        }
+
+        private void Wait(string waitingClause)
         {
             var sleepPeriod = _rand.Next(1000);
-            if (IsDebug)
-                Console.WriteLine($"Philosopher {Id} {waitingClause} for {sleepPeriod}");
+            WriteEvent($"Philosopher {Id} {waitingClause} for {sleepPeriod}");
             Thread.Sleep(sleepPeriod);
+        }
+
+
+        private static void WriteEvent(string message)
+        {
+            if (IsDebug)
+            {
+                Console.WriteLine(message);
+            }
         }
     }
 }
