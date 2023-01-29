@@ -89,6 +89,8 @@ namespace Threads
         {
             ConsoleWriter.WriteEvent($"Philosopher {Id} took forks");
             Interlocked.Increment(ref _forksPreDeadlockCount);
+            
+            // Если все, кроме текущего потока взяли вилки - то ждем, иначе будет дэдлок
             if (Interlocked.Read(ref _forksPreDeadlockCount) == Philosophers.PhilosophersCount)
             {
                 _preventDeadlock.WaitOne();

@@ -4,8 +4,8 @@ namespace Threads
     {
         internal static void Main()
         { 
-           //Philosophers.Execute();
-           MonitorQueue.Execute();
+           // Philosophers.Execute();
+           // MonitorQueue.Execute();
         }
     }
 }
