@@ -1,42 +1,33 @@
-using Utils;
+﻿using Utils;
 
-namespace Threads;
 
-internal static class MonitorQueue
+const int messagesCount = 10;
+const int handlersCount = 4;
+
+var handlers = Enumerable.Range(0, handlersCount).Select(x => new QueueHandler { Id = x }).ToArray();
+
+var readers = handlers[..2];
+var writers = handlers[2..];
+var dropper = new Thread(() =>
 {
-    private const int MessagesCount = 10;
+    Thread.Sleep(700);
+    ThreadSafeQueue.Drop();
+});
+dropper.Start();
 
-    private const int HandlersCount = 4;
-
-    internal static void Execute()
-    {
-        var handlers = Enumerable.Range(0, HandlersCount).Select(x => new QueueHandler { Id = x }).ToArray();
-
-        var readers = handlers[..2];
-        var writers = handlers[2..];
-        var dropper = new Thread(() =>
-        {
-            Thread.Sleep(700);
-            ThreadSafeQueue.Drop();
-        });
-        dropper.Start();
-
-        foreach (var reader in readers)
-        {
-            var thread = new Thread(() => reader.HandleRead());
-            thread.Start();
-        }
-
-        foreach (var writer in writers)
-        {
-            var writerInnerMessages = Enumerable.Range(0, MessagesCount).Select(x => x.ToString());
-            var thread = new Thread(() => writer.HandleWrite(writerInnerMessages));
-            thread.Start();
-        }
-
-
-    }
+foreach (var reader in readers)
+{
+    var thread = new Thread(() => reader.HandleRead());
+    thread.Start();
 }
+
+foreach (var writer in writers)
+{
+    var writerInnerMessages = Enumerable.Range(0, messagesCount).Select(x => x.ToString());
+    var thread = new Thread(() => writer.HandleWrite(writerInnerMessages));
+    thread.Start();
+}
+
 
 internal static class ThreadSafeQueue
 {
@@ -103,7 +94,6 @@ internal static class ThreadSafeQueue
             _count--;
             return item.Length;
         }
-
     }
 
     internal static void Drop()
@@ -113,6 +103,7 @@ internal static class ThreadSafeQueue
         {
             Monitor.PulseAll(LockTarget);
         }
+
         ConsoleWriter.WriteEvent("Queue Dropped!");
     }
 }
@@ -122,13 +113,15 @@ internal class QueueHandler
     internal int Id { private get; init; }
 
     private const int MessageCropLength = 5;
+
     internal void HandleWrite(IEnumerable<string> messages)
     {
         foreach (var message in messages)
         {
             var threadSpecificMessage = $"{Id}_{message}";
             Thread.Sleep(100);
-            ConsoleWriter.WriteEvent($"Writer {Id} try to push new value: {threadSpecificMessage.CropUpToLength(MessageCropLength)}...");
+            ConsoleWriter.WriteEvent(
+                $"Writer {Id} try to push new value: {threadSpecificMessage.CropUpToLength(MessageCropLength)}...");
             var messageLength = ThreadSafeQueue.Enqueue(threadSpecificMessage);
             if (messageLength == 0)
             {
@@ -137,7 +130,6 @@ internal class QueueHandler
             }
 
             ConsoleWriter.WriteEvent($"Writer {Id} pushed value with length {messageLength}.");
-
         }
     }
 
@@ -155,8 +147,6 @@ internal class QueueHandler
 
             ConsoleWriter.WriteEvent(
                 $"Reader {Id} read value {message.CropUpToLength(MessageCropLength)}... with length of {messageLength}");
-
-
         }
     }
 }
