@@ -3,15 +3,15 @@
 
 const int messagesCount = 10;
 const int handlersCount = 4;
-
-var handlers = Enumerable.Range(0, handlersCount).Select(x => new QueueHandler { Id = x }).ToArray();
+var queue = new ThreadSafeQueue();
+var handlers = Enumerable.Range(0, handlersCount).Select(x => new QueueHandler { Id = x, Queue = queue}).ToArray();
 
 var readers = handlers[..2];
 var writers = handlers[2..];
 var dropper = new Thread(() =>
 {
     Thread.Sleep(700);
-    ThreadSafeQueue.Drop();
+    queue.Drop();
 });
 dropper.Start();
 
@@ -29,18 +29,18 @@ foreach (var writer in writers)
 }
 
 
-internal static class ThreadSafeQueue
+internal class ThreadSafeQueue
 {
     private const int MaxLength = 10;
     private const int MessageMaxLength = 80;
 
-    private static readonly string[] Items = new string[MaxLength];
-    private static readonly object LockTarget = new();
+    private readonly string[] Items = new string[MaxLength];
+    private readonly object LockTarget = new();
 
-    private static bool _isDropped = false;
-    private static int _head, _tail, _count = 0;
+    private bool _isDropped = false;
+    private int _head, _tail, _count = 0;
 
-    internal static int Enqueue(string item)
+    internal int Enqueue(string item)
     {
         if (_isDropped)
         {
@@ -51,7 +51,7 @@ internal static class ThreadSafeQueue
         {
             var croppedString = item.CropUpToLength(MessageMaxLength);
 
-            if (_count == MaxLength)
+            while (_count == MaxLength)
             {
                 Monitor.Wait(LockTarget);
             }
@@ -68,7 +68,7 @@ internal static class ThreadSafeQueue
         }
     }
 
-    internal static int Dequeue(out string item)
+    internal int Dequeue(out string item)
     {
         if (_isDropped)
         {
@@ -96,7 +96,7 @@ internal static class ThreadSafeQueue
         }
     }
 
-    internal static void Drop()
+    internal void Drop()
     {
         _isDropped = true;
         lock (LockTarget)
@@ -111,7 +111,7 @@ internal static class ThreadSafeQueue
 internal class QueueHandler
 {
     internal int Id { private get; init; }
-
+    internal ThreadSafeQueue Queue { get; init; }
     private const int MessageCropLength = 5;
 
     internal void HandleWrite(IEnumerable<string> messages)
@@ -122,7 +122,7 @@ internal class QueueHandler
             Thread.Sleep(100);
             ConsoleWriter.WriteEvent(
                 $"Writer {Id} try to push new value: {threadSpecificMessage.CropUpToLength(MessageCropLength)}...");
-            var messageLength = ThreadSafeQueue.Enqueue(threadSpecificMessage);
+            var messageLength = Queue.Enqueue(threadSpecificMessage);
             if (messageLength == 0)
             {
                 ConsoleWriter.WriteEvent($"Writer {Id} exited due to drop");
@@ -138,7 +138,7 @@ internal class QueueHandler
         while (true)
         {
             ConsoleWriter.WriteEvent($"Reader {Id} waiting value.");
-            var messageLength = ThreadSafeQueue.Dequeue(out var message);
+            var messageLength = Queue.Dequeue(out var message);
             if (message.Length == 0)
             {
                 ConsoleWriter.WriteEvent($"Reader {Id} exited due to drop");

@@ -1,6 +1,4 @@
 ﻿namespace Philosophers;
-
-using static Program;
 using Utils;
 
 internal class Philosopher
@@ -10,22 +8,28 @@ internal class Philosopher
     /// <summary>
     /// Правая вилка.
     /// </summary>
-    private object Left { get; }
+    private object FirstFork { get; }
 
     /// <summary>
     /// Левая вилка.
     /// </summary>
-    private object Right { get; }
+    private object SecondFork { get; }
 
     private readonly Random _rand = new();
-
-    private readonly Mutex _preventDeadlock = new Mutex();
-    private static long _forksPreDeadlockCount = 0;
-
+    
     internal Philosopher(IReadOnlyList<object> forks, int id)
     {
-        Left = forks[id];
-        Right = forks[(id + 1) % forks.Count];
+        FirstFork = forks[id];
+        SecondFork = forks[(id + 1) % forks.Count];
+
+        // У последнего философа меняем вилки.
+        if (id == forks.Count - 1)
+        {
+            SecondFork = forks[id];
+            FirstFork = forks[(id + 1) % forks.Count];
+        }
+        
+
         Id = id;
     }
 
@@ -35,53 +39,15 @@ internal class Philosopher
         while (true)
         {
             Wait("thinking");
-            TryTakeOrWait();
-            lock (Left)
-            lock (Right)
+            
+            lock(FirstFork)
+            lock (SecondFork)
             {
                 Wait("eating");
             }
-
-            ReleaseForks();
         }
     }
-
-
-    private void ReleaseForks()
-    {
-        ConsoleWriter.WriteEvent($"Philosopher {Id} is about to release forks");
-        if (Interlocked.Read(ref _forksPreDeadlockCount) == PhilosophersCount)
-        {
-            Interlocked.Decrement(ref _forksPreDeadlockCount);
-            try
-            {
-                _preventDeadlock.ReleaseMutex();
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-        else
-        {
-            Interlocked.Decrement(ref _forksPreDeadlockCount);
-        }
-    }
-
-
-    private void TryTakeOrWait()
-    {
-        ConsoleWriter.WriteEvent($"Philosopher {Id} took forks");
-        Interlocked.Increment(ref _forksPreDeadlockCount);
-
-        // Если все, кроме текущего потока взяли вилки - то ждем, иначе будет дэдлок
-        if (Interlocked.Read(ref _forksPreDeadlockCount) == PhilosophersCount)
-        {
-            _preventDeadlock.WaitOne();
-            ConsoleWriter.WriteEvent($"Philosopher {Id} waits to avoid deadlock");
-        }
-    }
-
+    
     private void Wait(string waitingClause)
     {
         var sleepPeriod = _rand.Next(1000);
