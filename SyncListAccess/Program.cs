@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.Contracts;
-using SyncListAccess;
+﻿using SyncListAccess;
 using Utils;
 
 const string exitCommand = "exit";
@@ -13,16 +12,17 @@ Console.WriteLine(@$"
 var input = Console.ReadLine();
 var isExited = false;
 var list = new SyncLinkedList<string>();
-var sortHandler = new Thread(() =>
+
+var sortThread = new Thread(() =>
 {
-    while (!isExited)
+    //while (true)
     {
-        Thread.Sleep(5000);
+        Thread.Sleep(1000);
         list.Sort();
+        Console.WriteLine("Sorted");
     }
 });
-
-sortHandler.Start();
+sortThread.Start();
 
 
 while (!string.Equals(input, exitCommand, StringComparison.InvariantCultureIgnoreCase))
@@ -30,7 +30,7 @@ while (!string.Equals(input, exitCommand, StringComparison.InvariantCultureIgnor
     if (string.IsNullOrWhiteSpace(input))
     {
         Console.WriteLine("Текущее состояние списка: " +
-                          $"{list}");
+                          $"{list.GetValue()}");
     }
     else
     {
@@ -40,4 +40,5 @@ while (!string.Equals(input, exitCommand, StringComparison.InvariantCultureIgnor
 
     input = Console.ReadLine();
 }
+
 isExited = false;

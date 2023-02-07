@@ -5,13 +5,14 @@ public class Node<T> : IComparable<Node<T>>
     public Node(T data)
     {
         Data = data;
+        Mutex = new();
     }
 
     private T Data { get; }
 
     public Node<T> Next { get; set; }
 
-    public object Mutex { get; set; } = new();
+    public object Mutex { get; set; }
 
     public int CompareTo(Node<T> other)
     {

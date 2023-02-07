@@ -5,6 +5,7 @@ namespace SyncListAccess;
 public class SyncLinkedList<T> where T : IComparable
 {
     private Node<T> _head;
+
     private int _count = 0;
 
     public void Add(T item)
@@ -18,7 +19,7 @@ public class SyncLinkedList<T> where T : IComparable
         }
         else
         {
-            lock (_head)
+            lock (_head.Mutex)
             {
                 var prevHead = _head;
                 node.Next = prevHead;
@@ -37,7 +38,6 @@ public class SyncLinkedList<T> where T : IComparable
         Node<T> preCurrentItem = default;
         var current = _head;
         var next = current.Next;
-
         var sortCount = 0;
 
         while (sortCount < _count)
@@ -47,25 +47,38 @@ public class SyncLinkedList<T> where T : IComparable
                 Monitor.Enter(preCurrentItem.Mutex);
             }
 
-            lock (current.Mutex)
-            lock (next.Mutex)
+            Monitor.Enter(current.Mutex);
+            Monitor.Enter(next.Mutex);
+
+            if (current.CompareTo(next) > 0)
             {
-                if (current.CompareTo(next) > 0)
+                if (preCurrentItem != default)
                 {
-                    var secondNext = next.Next;
-                    next.Next = current;
-                    current.Next = secondNext;
-                    if (preCurrentItem != default)
-                    {
-                        preCurrentItem.Next = next;
-                    }
+                    preCurrentItem.Next = next;
                 }
+                else
+                {
+                    _head = next;
+                }
+
+                var secondNext = next.Next;
+                next.Next = current;
+                current.Next = secondNext;
             }
 
             preCurrentItem = current;
             current = next;
             next = next.Next;
 
+
+            Monitor.Exit(preCurrentItem.Mutex);
+            Monitor.Exit(current.Mutex);
+
+            if (next != default)
+            {
+                Monitor.Exit(next.Mutex);
+            }
+            // Если прошли до конца.
             if (next == null)
             {
                 preCurrentItem = default;
@@ -76,7 +89,7 @@ public class SyncLinkedList<T> where T : IComparable
         }
     }
 
-    public override string ToString()
+    public string GetValue()
     {
         var stringBuilder = new StringBuilder();
 
@@ -85,30 +98,23 @@ public class SyncLinkedList<T> where T : IComparable
 
         while (currentItem != null)
         {
-            try
+            Monitor.Enter(currentItem.Mutex);
+            if (preCurrentItem != default && Monitor.IsEntered(preCurrentItem.Mutex))
             {
-                Monitor.Enter(currentItem.Mutex);
-                if (preCurrentItem != default && Monitor.IsEntered(preCurrentItem.Mutex))
-                {
-                    Monitor.Exit(preCurrentItem.Mutex);
-                }
-
-                stringBuilder.Append(currentItem);
-
-                preCurrentItem = currentItem;
-                currentItem = currentItem.Next;
-
-                if (currentItem != null)
-                {
-                    Monitor.Enter(currentItem.Mutex);
-                }
-
                 Monitor.Exit(preCurrentItem.Mutex);
             }
-            finally
+
+            stringBuilder.Append(currentItem);
+
+            preCurrentItem = currentItem;
+            currentItem = currentItem.Next;
+
+            if (currentItem != default)
             {
-                // Monitor.Exit(preCurrentItem.Mutex);
+                Monitor.Enter(currentItem.Mutex);
             }
+
+            Monitor.Exit(preCurrentItem.Mutex);
         }
 
 
