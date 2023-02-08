@@ -1,11 +1,10 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
+﻿#nullable enable
 namespace Utils
 {
-    public static class Guard
+    /// <summary>
+    /// Валидатор.
+    /// </summary>
+    public static partial class Guard
     {
         /// <summary>
         /// Проверить, что два значения не равны.
@@ -20,7 +19,7 @@ namespace Utils
                 throw new ArgumentException($" {expectedValue} Не должно быть равно {valueToCompare}");
             }
         }
-    
+
         /// <summary>
         /// Проверить, что значение не равно значению по-умолчанию.
         /// </summary>
@@ -33,28 +32,64 @@ namespace Utils
                 throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию", nameof(expectedValue));
             }
         }
-    
+
         /// <summary>
         /// Проверить, что коллекция не пустая.
         /// </summary>
         /// <typeparam name="T">Тип элемента коллекции.</typeparam>
-        public static void IsNotEmpty<T>(IEnumerable<T> collection)
+        public static void IsNotEmpty<T>(IEnumerable<T>? collection)
         {
-            if (!collection.Any())
+            if (collection?.Any() != true)
             {
                 throw new ArgumentException($"Коллекция не должна быть пустой", nameof(collection));
             }
         }
-        
+
         /// <summary>
         /// Проверить, что значение меньше или равно.
         /// </summary>
-        /// <typeparam name="T">Тип элемента коллекции.</typeparam>
-        public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
+        /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsLess<T>(T first, T second) where T : IComparable
         {
             if (first.CompareTo(second) > 0)
             {
                 throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
+            }
+        }
+
+        /// <summary>
+        /// Проверить, что значение меньше.
+        /// </summary>
+        /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
+        {
+            if (first.CompareTo(second) >= 0)
+            {
+                throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
+            }
+        }
+
+        /// <summary>
+        /// Проверить, что значение строго больше.
+        /// </summary>
+        /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsGreater<T>(T first, T second) where T : IComparable
+        {
+            if (first.CompareTo(second) < 0)
+            {
+                throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
+            }
+        }
+
+        /// <summary>
+        /// Проверить, что значение больше или равно.
+        /// </summary>
+        /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsGreaterOrEqual<T>(T first, T second) where T : IComparable
+        {
+            if (first.CompareTo(second) <= 0)
+            {
+                throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
             }
         }
     }

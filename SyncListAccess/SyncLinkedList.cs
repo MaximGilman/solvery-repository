@@ -2,11 +2,27 @@
 
 namespace SyncListAccess;
 
+/// <summary>
+/// Многопоточный список.
+/// </summary>
+/// <typeparam name="T">Тип значений элементов списка.</typeparam>
 public class SyncLinkedList<T> where T : IComparable
 {
+    #region Поля и свойства
+
+    /// <summary>
+    /// Головной узел.
+    /// </summary>
     private Node<T> _head;
 
-    private int _count = 0;
+    /// <summary>
+    /// Количество элементов.
+    /// </summary>
+    private int _count;
+
+    #endregion
+
+    #region Методы
 
     public void Add(T item)
     {
@@ -33,7 +49,9 @@ public class SyncLinkedList<T> where T : IComparable
     public void Sort()
     {
         if (_head?.Next == null)
+        {
             return;
+        }
 
         Node<T> preCurrentItem = default;
         var current = _head;
@@ -89,7 +107,11 @@ public class SyncLinkedList<T> where T : IComparable
         }
     }
 
-    public string GetValue()
+    #endregion
+
+    #region Базовый клас
+
+    public override string ToString()
     {
         var stringBuilder = new StringBuilder();
 
@@ -121,4 +143,6 @@ public class SyncLinkedList<T> where T : IComparable
         stringBuilder.Append('X');
         return stringBuilder.ToString();
     }
+
+    #endregion
 }

@@ -2,22 +2,47 @@
 
 public class Node<T> : IComparable<Node<T>>
 {
-    public Node(T data)
-    {
-        Data = data;
-        Mutex = new();
-    }
+    #region Поля и свойства
 
-    private T Data { get; }
+    /// <summary>
+    /// Значение элемента.
+    /// </summary>
+    private T _data { get; }
 
+    /// <summary>
+    /// Указатель на следующий элемент.
+    /// </summary>
     public Node<T> Next { get; set; }
 
-    public object Mutex { get; set; }
+    /// <summary>
+    /// Объект блокировки элемента.
+    /// </summary>
+    public object Mutex { get; }
+
+    #endregion
+
+    #region Конструктор
+
+    public Node(T data)
+    {
+        _data = data;
+        Mutex = new object();
+    }
+
+    #endregion
+
+    #region IComparable
 
     public int CompareTo(Node<T> other)
     {
-        return Comparer<T>.Default.Compare(Data, other.Data);
+        return Comparer<T>.Default.Compare(_data, other._data);
     }
 
-    public override string ToString() => Data == null ? string.Empty : $"{Data} - ";
+    #endregion
+
+    #region Базовый класс
+
+    public override string ToString() => _data == null ? string.Empty : $"{_data} - ";
+
+    #endregion
 }

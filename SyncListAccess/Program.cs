@@ -1,12 +1,12 @@
 ﻿using SyncListAccess;
 using Utils;
 
-const string exitCommand = "exit";
+const string EXIT_COMMAND = "exit";
 
 Console.WriteLine(@$"
     Многопоточный список.
     - Введите строку, чтобы добавить ее в список
-    - Введите {exitCommand} чтобы выйти
+    - Введите {EXIT_COMMAND} чтобы выйти
     - Введите пустую строку, чтобы вывести элементы списка
 ");
 var input = Console.ReadLine();
@@ -25,12 +25,11 @@ var sortThread = new Thread(() =>
 sortThread.Start();
 
 
-while (!string.Equals(input, exitCommand, StringComparison.InvariantCultureIgnoreCase))
+while (!string.Equals(input, EXIT_COMMAND, StringComparison.InvariantCultureIgnoreCase))
 {
     if (string.IsNullOrWhiteSpace(input))
     {
-        Console.WriteLine("Текущее состояние списка: " +
-                          $"{list.GetValue()}");
+        Console.WriteLine($"Текущее состояние списка: {list}");
     }
     else
     {

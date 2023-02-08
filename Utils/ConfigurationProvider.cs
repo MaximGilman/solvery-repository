@@ -2,12 +2,23 @@
 
 namespace Utils;
 
+/// <summary>
+/// Поставщик информации о конфигурации.
+/// </summary>
 public static class ConfigurationProvider
 {
+    /// <summary>
+    /// Конфигурация.
+    /// </summary>
     private static readonly IConfiguration _configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json", optional: true).Build();
 
-    public static T? GetValue<T>(string sectionName) => 
+    /// <summary>
+    /// Получить значение из секции конфигурации по имени.
+    /// </summary>
+    /// <param name="sectionName">Имя секции.</param>
+    /// <typeparam name="T">Возвращаемый тип значения.</typeparam>
+    public static T GetValue<T>(string sectionName) =>
         _configuration.GetValue<T>(sectionName);
 }
