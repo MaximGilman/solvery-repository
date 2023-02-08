@@ -17,6 +17,7 @@ public class SyncLinkedList<T> where T : IComparable
 
     private object _headObject = new();
 
+    private object _lastMockObject = new();
     /// <summary>
     /// Количество элементов.
     /// </summary>
@@ -35,15 +36,14 @@ public class SyncLinkedList<T> where T : IComparable
         {
             _head = node;
             _headObject = _head.Mutex;
-
         }
         else
         {
             node.Next = _head;
             _head = node;
             _headObject = _head.Mutex;
-
         }
+
         Monitor.Exit(prevHeadObject);
     }
 
@@ -60,5 +60,36 @@ public class SyncLinkedList<T> where T : IComparable
                 }
             }
         }
+    }
+
+    public override string ToString()
+    {
+        // поскольку ссылки на головы меняются - надо после захода в лок брать значение в переменную и ее закрывать
+
+        Monitor.Enter(_headObject);
+        var sb = new StringBuilder();
+
+        if (_head?.Next == null)
+        {
+            Monitor.Exit(_headObject);
+            return $"{_head?.ToString() ?? "Empty"}";
+        }
+        var currentHeadObject = _headObject; // отпустим, когда возьмем следующий
+        var currentValue = _head;
+
+        while (currentValue != null)
+        {
+            sb.Append(currentValue);
+
+            var nextObject = currentValue.Next?.Mutex ?? _lastMockObject;
+            Monitor.Enter(nextObject);
+            Monitor.Exit(currentHeadObject);
+            currentHeadObject = nextObject;
+            currentValue = currentValue.Next;
+
+        }
+        Monitor.Exit(currentHeadObject);
+
+        return sb.ToString();
     }
 }
