@@ -15,6 +15,8 @@ public class SyncLinkedList<T> where T : IComparable
     /// </summary>
     private Node<T> _head;
 
+    private object _headObject = new();
+
     /// <summary>
     /// Количество элементов.
     /// </summary>
@@ -22,127 +24,41 @@ public class SyncLinkedList<T> where T : IComparable
 
     #endregion
 
-    #region Методы
-
     public void Add(T item)
     {
+        Monitor.Enter(_headObject);
+        var prevHeadObject = _headObject;
         var node = new Node<T>(item);
-
+        _count++;
 
         if (_head is null)
         {
             _head = node;
+            _headObject = _head.Mutex;
+
         }
         else
         {
-            lock (_head.Mutex)
-            {
-                var prevHead = _head;
-                node.Next = prevHead;
-                _head = node;
-            }
-        }
+            node.Next = _head;
+            _head = node;
+            _headObject = _head.Mutex;
 
-        _count++;
+        }
+        Monitor.Exit(prevHeadObject);
     }
 
-    public void Sort()
+    private void CheckNoLock()
     {
-        if (_head?.Next == null)
         {
-            return;
-        }
-
-        Node<T> preCurrentItem = default;
-        var current = _head;
-        var next = current.Next;
-        var sortCount = 0;
-
-        while (sortCount < _count)
-        {
-            if (preCurrentItem != default)
+            var current = _head;
+            while (current != null)
             {
-                Monitor.Enter(preCurrentItem.Mutex);
-            }
-
-            Monitor.Enter(current.Mutex);
-            Monitor.Enter(next.Mutex);
-
-            if (current.CompareTo(next) > 0)
-            {
-                if (preCurrentItem != default)
-                {
-                    preCurrentItem.Next = next;
-                }
+                if (Monitor.IsEntered(current.Mutex)) throw new Exception("Остался залоченн" + current.ToString());
                 else
                 {
-                    _head = next;
+                    current = current.Next;
                 }
-
-                var secondNext = next.Next;
-                next.Next = current;
-                current.Next = secondNext;
-            }
-
-            preCurrentItem = current;
-            current = next;
-            next = next.Next;
-
-
-            Monitor.Exit(preCurrentItem.Mutex);
-            Monitor.Exit(current.Mutex);
-
-            if (next != default)
-            {
-                Monitor.Exit(next.Mutex);
-            }
-            // Если прошли до конца.
-            if (next == null)
-            {
-                preCurrentItem = default;
-                current = _head;
-                next = current.Next;
-                sortCount++;
             }
         }
     }
-
-    #endregion
-
-    #region Базовый клас
-
-    public override string ToString()
-    {
-        var stringBuilder = new StringBuilder();
-
-        var currentItem = _head;
-        Node<T> preCurrentItem = default;
-
-        while (currentItem != null)
-        {
-            Monitor.Enter(currentItem.Mutex);
-            if (preCurrentItem != default && Monitor.IsEntered(preCurrentItem.Mutex))
-            {
-                Monitor.Exit(preCurrentItem.Mutex);
-            }
-
-            stringBuilder.Append(currentItem);
-
-            preCurrentItem = currentItem;
-            currentItem = currentItem.Next;
-
-            if (currentItem != default)
-            {
-                Monitor.Enter(currentItem.Mutex);
-            }
-
-            Monitor.Exit(preCurrentItem.Mutex);
-        }
-
-
-        stringBuilder.Append('X');
-        return stringBuilder.ToString();
-    }
-
-    #endregion
 }

@@ -10,20 +10,7 @@ Console.WriteLine(@$"
     - Введите пустую строку, чтобы вывести элементы списка
 ");
 var input = Console.ReadLine();
-var isExited = false;
 var list = new SyncLinkedList<string>();
-
-var sortThread = new Thread(() =>
-{
-    //while (true)
-    {
-        Thread.Sleep(1000);
-        list.Sort();
-        Console.WriteLine("Sorted");
-    }
-});
-sortThread.Start();
-
 
 while (!string.Equals(input, EXIT_COMMAND, StringComparison.InvariantCultureIgnoreCase))
 {
@@ -39,5 +26,3 @@ while (!string.Equals(input, EXIT_COMMAND, StringComparison.InvariantCultureIgno
 
     input = Console.ReadLine();
 }
-
-isExited = false;
