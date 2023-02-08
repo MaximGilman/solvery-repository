@@ -48,6 +48,11 @@ internal class ThreadSafeQueue
                 Monitor.Wait(_lockTarget);
             }
 
+            if (_isDropped)
+            {
+                return 0;
+            }
+
             if (_count == 1)
             {
                 Monitor.PulseAll(_lockTarget);
@@ -74,14 +79,20 @@ internal class ThreadSafeQueue
                 return 0;
             }
 
-            while (_count == MAX_LENGTH)
+            if (_count == MAX_LENGTH)
             {
                 Monitor.PulseAll(_lockTarget);
             }
 
-            if (_count == 0)
+            while (_count == 0)
             {
                 Monitor.Wait(_lockTarget);
+            }
+
+            if (_isDropped)
+            {
+                item = string.Empty;
+                return 0;
             }
 
             _tail = (_tail + 1) % MAX_LENGTH;
@@ -96,6 +107,11 @@ internal class ThreadSafeQueue
     {
         lock (_lockTarget)
         {
+            if (_isDropped)
+            {
+                return;
+            }
+
             _isDropped = true;
 
             Monitor.PulseAll(_lockTarget);
