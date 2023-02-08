@@ -8,7 +8,7 @@
         /// <summary>
         /// Флаг, указывающий, выводить ли информацию в консоль.
         /// </summary>
-        private static readonly bool _isDebug = ConfigurationProvider.GetValue<bool>("isDebug");
+        private static readonly bool _isDebug = ConfigurationProvider.GetValue<bool?>("isDebug") ?? true;
 
         public static void WriteEvent(string message)
         {
