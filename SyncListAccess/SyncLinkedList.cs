@@ -15,81 +15,90 @@ public class SyncLinkedList<T> where T : IComparable
     /// </summary>
     private Node<T> _head;
 
-    private object _headObject = new();
+    /// <summary>
+    /// Хвост списка.
+    /// </summary>
+    private Node<T> _tail;
 
-    private object _lastMockObject = new();
     /// <summary>
     /// Количество элементов.
     /// </summary>
     private int _count;
 
-    #endregion
-
-    public void Add(T item)
+    /// <summary>
+    /// Количество элементов.
+    /// </summary>
+    public int Count
     {
-        Monitor.Enter(_headObject);
-        var prevHeadObject = _headObject;
-        var node = new Node<T>(item);
-        _count++;
-
-        if (_head is null)
+        get
         {
-            _head = node;
-            _headObject = _head.Mutex;
-        }
-        else
-        {
-            node.Next = _head;
-            _head = node;
-            _headObject = _head.Mutex;
-        }
-
-        Monitor.Exit(prevHeadObject);
-    }
-
-    private void CheckNoLock()
-    {
-        {
-            var current = _head;
-            while (current != null)
+            lock (_head)
             {
-                if (Monitor.IsEntered(current.Mutex)) throw new Exception("Остался залоченн" + current.ToString());
-                else
-                {
-                    current = current.Next;
-                }
+                return _count;
             }
         }
     }
 
+    #endregion
+
+    #region Конструктор
+
+    public SyncLinkedList()
+    {
+        _tail = new Node<T>(default);
+        _head = new Node<T>(default);
+        ;
+        _head.Next = _tail;
+    }
+
+    #endregion
+
+    #region Методы
+
+    /// <summary>
+    /// Добавить элемент в список.
+    /// </summary>
+    /// <param name="item">Значение элемента.</param>
+    public void Add(T item)
+    {
+        var itemNode = new Node<T>(item);
+        lock (itemNode.Mutex)
+        {
+            lock (_head.Mutex)
+            {
+                var prevHead = _head;
+                itemNode.Next = prevHead;
+                _head = itemNode;
+                _count++;
+            }
+        }
+    }
+
+    #endregion
+    
+    #region Переопределения
+
     public override string ToString()
     {
-        // поскольку ссылки на головы меняются - надо после захода в лок брать значение в переменную и ее закрывать
-
-        Monitor.Enter(_headObject);
         var sb = new StringBuilder();
 
-        if (_head?.Next == null)
+        Monitor.Enter(_head.Mutex);
+        var prev = _head;
+        Monitor.Enter(prev.Next.Mutex);
+        var current = prev.Next;
+        while (current != _tail)
         {
-            Monitor.Exit(_headObject);
-            return $"{_head?.ToString() ?? "Empty"}";
+            sb.Append(prev);
+            Monitor.Exit(prev.Mutex);
+            prev = current;
+            current = current.Next;
+            Monitor.Enter(current.Mutex);
         }
-        var currentHeadObject = _headObject; // отпустим, когда возьмем следующий
-        var currentValue = _head;
 
-        while (currentValue != null)
-        {
-            sb.Append(currentValue);
-
-            var nextObject = currentValue.Next?.Mutex ?? _lastMockObject;
-            Monitor.Enter(nextObject);
-            Monitor.Exit(currentHeadObject);
-            currentHeadObject = nextObject;
-            currentValue = currentValue.Next;
-
-        }
-        Monitor.Exit(currentHeadObject);
-
+        sb.Append('X'); // Конец списка
+        Monitor.Exit(current.Mutex);
         return sb.ToString();
     }
+
+    #endregion
 }
