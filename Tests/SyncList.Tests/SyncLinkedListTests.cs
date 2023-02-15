@@ -1,15 +1,15 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using SyncListAccess;
 using Xunit;
 using Xbehave;
 using FluentAssertions;
+using Utils;
 
 namespace SyncList.Tests;
 
-public class UnitTest1
+public class SyncLinkedListTests
 {
     private SyncLinkedList<string> _syncStringList;
 
@@ -29,6 +29,7 @@ public class UnitTest1
     /// <param name="threadCount">Количество потоков.</param>
     /// <param name="exception">Контейнер для исключений.</param>
     [Scenario]
+    [Example(1, 1)]
     [Example(1, 10)]
     [Example(10, 1)]
     [Example(10, 10)]
@@ -39,6 +40,13 @@ public class UnitTest1
         {
             repeatCount = 100;
             threadCount = 10;
+        });
+
+
+        "Проверены входные значения".x(() =>
+        {
+            Guard.IsGreater(repeatCount, 0);
+            Guard.IsGreater(threadCount, 0);
         });
 
         "Когда добавляются элементы".x(() =>
@@ -70,9 +78,11 @@ public class UnitTest1
     /// <param name="exception">Контейнер для исключений.</param>
     /// <param name="expectedResults">Контейнер для ожидаемого вывода.</param>
     [Scenario]
+    [Example(0, 1, 1)]
     [Example(1, 1, 1)]
     [Example(1, 1, 10)]
     [Example(1, 10, 1)]
+    [Example(10, 1, 1)]
     [Example(10, 10, 10)]
     [Example(10, 1, 10)]
     [Example(10, 10, 1)]
@@ -89,6 +99,12 @@ public class UnitTest1
 
         "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
 
+        "Проверены входные значения".x(() =>
+        {
+            Guard.IsGreater(itemsCount, 0);
+            Guard.IsGreater(repeatCount, 0);
+            Guard.IsGreater(threadCount, 0);
+        });
 
         "Когда выводятся элементы".x(() =>
             exception = Record.Exception(() =>

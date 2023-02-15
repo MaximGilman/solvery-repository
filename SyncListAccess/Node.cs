@@ -35,7 +35,13 @@ public class Node<T> : IComparable<Node<T>>
 
     public int CompareTo(Node<T> other)
     {
-        return Comparer<T>.Default.Compare(_data, other._data);
+        return (this, other) switch
+        {
+            (null, null) => 0,
+            (_, null) => 1,
+            (null, _) => -1,
+            _ => Comparer<T>.Default.Compare(_data, other._data)
+        };
     }
 
     #endregion
@@ -43,6 +49,10 @@ public class Node<T> : IComparable<Node<T>>
     #region Базовый класс
 
     public override string ToString() => _data == null ? string.Empty : $"{_data} - ";
+
+    public static bool operator >(Node<T> left, Node<T> right) => left.CompareTo(right) > 0;
+
+    public static bool operator <(Node<T> left, Node<T> right) => left.CompareTo(right) < 0;
 
     #endregion
 }

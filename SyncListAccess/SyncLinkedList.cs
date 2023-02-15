@@ -1,6 +1,7 @@
 ﻿using System.Text;
 
 namespace SyncListAccess;
+// TODO: Переделать head и Tail
 
 /// <summary>
 /// Многопоточный список.
@@ -82,12 +83,90 @@ public class SyncLinkedList<T> where T : IComparable
         }
     }
 
+
+    /// <summary>
+    /// Сортировать список по возрастанию
+    /// </summary>
+    public void Sort()
+    {
+        if (this.Count < 2)
+        {
+            return;
+        }
+
+        var sortCount = this.Count;
+        for (var i = 0; i <= sortCount; i++)
+        {
+            // Лочим именно 2 раза, т.к. Head - это реальный первый элемент, prev для него нет.
+            Monitor.Enter(_head.Mutex);
+            Monitor.Enter(_head.Mutex);
+            Monitor.Enter(_head.Next.Mutex);
+            // На первом элементе предыдущий - это он сам.
+            var prev = _head;
+            var current = _head;
+            var next = _head.Next;
+            while (next != null)
+            {
+                if (current > next)
+                {
+                    var outgoingNext = next.Next;
+
+                    if (current == _head)
+                    {
+                        _head = next;
+                    }
+                    else
+                    {
+                        prev.Next = next;
+                    }
+
+                    next.Next = current;
+                    current.Next = outgoingNext;
+
+                    Monitor.Exit(prev.Mutex);
+                    Monitor.Exit(current.Mutex);
+                    Monitor.Exit(next.Mutex);
+
+                    // Поскольку мы поменяли порядок, передвигать не нужно, только восстановить prev и next.
+                    prev = next;
+                    next = current.Next;
+                }
+                else
+                {
+                    Monitor.Exit(prev.Mutex);
+                    Monitor.Exit(current.Mutex);
+                    Monitor.Exit(next.Mutex);
+
+                    prev = current;
+                    current = current.Next;
+                    next = next.Next;
+                }
+
+
+                Monitor.Enter(prev.Mutex);
+                Monitor.Enter(current.Mutex);
+                if (next is { } _)
+                {
+                    Monitor.Enter(next.Mutex);
+                }
+            }
+
+            Monitor.Exit(prev.Mutex);
+            Monitor.Exit(current.Mutex);
+        }
+    }
+
     #endregion
 
-    #region Переопределения
+    #region Базовый класс
 
     public override string ToString()
     {
+        if (this.Count  == 1)
+        {
+            return $"{_head}X";
+        }
+
         var sb = new StringBuilder();
         Monitor.Enter(_head.Mutex);
         var cur = _head;
@@ -106,6 +185,7 @@ public class SyncLinkedList<T> where T : IComparable
             }
             else
             {
+                sb.Append(cur);
                 Monitor.Exit(cur.Mutex);
                 break;
             }
