@@ -32,7 +32,7 @@ public class SyncLinkedList<T> where T : IComparable
     {
         get
         {
-            lock (_head)
+            lock (_head.Mutex)
             {
                 return _count;
             }
@@ -61,42 +61,57 @@ public class SyncLinkedList<T> where T : IComparable
     /// <param name="item">Значение элемента.</param>
     public void Add(T item)
     {
-        var itemNode = new Node<T>(item);
-        lock (itemNode.Mutex)
+        lock (_head.Mutex)
         {
-            lock (_head.Mutex)
+            var itemNode = new Node<T>(item);
+
+            lock (itemNode.Mutex)
             {
-                var prevHead = _head;
-                itemNode.Next = prevHead;
-                _head = itemNode;
+                if (Count == 0)
+                {
+                    _head = itemNode;
+                }
+                else
+                {
+                    itemNode.Next = _head;
+                    _head = itemNode;
+                }
+
                 _count++;
             }
         }
     }
 
     #endregion
-    
+
     #region Переопределения
 
     public override string ToString()
     {
         var sb = new StringBuilder();
-
         Monitor.Enter(_head.Mutex);
-        var prev = _head;
-        Monitor.Enter(prev.Next.Mutex);
-        var current = prev.Next;
-        while (current != _tail)
+        var cur = _head;
+        Monitor.Enter(cur.Next.Mutex);
+        var next = cur.Next;
+        while (true)
         {
-            sb.Append(prev);
-            Monitor.Exit(prev.Mutex);
-            prev = current;
-            current = current.Next;
-            Monitor.Enter(current.Mutex);
+            sb.Append(cur);
+            Monitor.Exit(cur.Mutex);
+            cur = next;
+
+            if (next.Next is { } newNext)
+            {
+                next = newNext;
+                Monitor.Enter(newNext.Mutex);
+            }
+            else
+            {
+                Monitor.Exit(cur.Mutex);
+                break;
+            }
         }
 
         sb.Append('X'); // Конец списка
-        Monitor.Exit(current.Mutex);
         return sb.ToString();
     }
 
