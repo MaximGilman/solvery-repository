@@ -3,15 +3,20 @@
 
 var list = new SyncLinkedList<string>();
 
-for (var j = 0; j < 3; j++)
+for (int i = 0; i < 100; i++)
+{
+   list.Add(i.ToString());
+}
+
+for (var j = 0; j < 100; j++)
 {
     for (var i = 0; i < 20; i++)
     {
-        var i1 = i.ToString();
-        var addThread = new Thread(() => list.Add(i1));
+        var addThread = new Thread(() =>
+        {
+            list.Sort();
+        });
         addThread.Start();
-
     }
 }
 
-Console.WriteLine(list);

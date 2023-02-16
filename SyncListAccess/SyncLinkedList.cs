@@ -47,9 +47,10 @@ public class SyncLinkedList<T> where T : IComparable
     public SyncLinkedList()
     {
         _tail = new Node<T>(default);
-        _head = new Node<T>(default);
-        ;
-        _head.Next = _tail;
+        _head = new Node<T>(default)
+        {
+            Next = _tail
+        };
     }
 
     #endregion
@@ -105,7 +106,7 @@ public class SyncLinkedList<T> where T : IComparable
             var prev = _head;
             var current = _head;
             var next = _head.Next;
-            while (next != null)
+            while (next != _tail && next != null)
             {
                 if (current > next)
                 {
@@ -145,7 +146,7 @@ public class SyncLinkedList<T> where T : IComparable
 
                 Monitor.Enter(prev.Mutex);
                 Monitor.Enter(current.Mutex);
-                if (next is { } _)
+                if (next != _tail && next != null)
                 {
                     Monitor.Enter(next.Mutex);
                 }
@@ -162,9 +163,13 @@ public class SyncLinkedList<T> where T : IComparable
 
     public override string ToString()
     {
-        if (this.Count  == 1)
+
+        switch (this.Count)
         {
-            return $"{_head}X";
+            case 0:
+                return $"Empty";
+            case 1:
+                return $"{_head}X";
         }
 
         var sb = new StringBuilder();

@@ -1,5 +1,4 @@
-﻿#nullable enable
-namespace Utils
+﻿namespace Utils
 {
     /// <summary>
     /// Валидатор.
@@ -12,9 +11,10 @@ namespace Utils
         /// <typeparam name="T">Тип значения.</typeparam>
         /// <param name="expectedValue">Текущее значение.</param>
         /// <param name="valueToCompare">Значение для сравнения.</param>
-        public static void IsNotEqual<T>(T? expectedValue, T? valueToCompare)
+        public static void IsNotEqual<T>(T expectedValue, T valueToCompare)
         {
-            if (expectedValue?.Equals(valueToCompare) == true)
+            if (expectedValue?.Equals(valueToCompare) == true ||
+                Comparer<T>.Default.Compare(expectedValue, valueToCompare) == 0)
             {
                 throw new ArgumentException($" {expectedValue} Не должно быть равно {valueToCompare}");
             }
@@ -25,11 +25,12 @@ namespace Utils
         /// </summary>
         /// <typeparam name="T">Тип значения.</typeparam>
         /// <param name="expectedValue">Текущее значение.</param>
-        public static void IsNotDefault<T>(T? expectedValue)
+        public static void IsNotDefault<T>(T expectedValue)
         {
             if (expectedValue?.Equals(default(T)) == true)
             {
-                throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию", nameof(expectedValue));
+                throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию",
+                    nameof(expectedValue));
             }
         }
 
@@ -37,7 +38,7 @@ namespace Utils
         /// Проверить, что коллекция не пустая.
         /// </summary>
         /// <typeparam name="T">Тип элемента коллекции.</typeparam>
-        public static void IsNotEmpty<T>(IEnumerable<T>? collection)
+        public static void IsNotEmpty<T>(IEnumerable<T> collection)
         {
             if (collection?.Any() != true)
             {
@@ -51,7 +52,7 @@ namespace Utils
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
         public static void IsLess<T>(T first, T second) where T : IComparable
         {
-            if (first.CompareTo(second) > 0)
+            if (first?.CompareTo(second) >= 0 || Comparer<T>.Default.Compare(first, second) >= 0)
             {
                 throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
             }
@@ -63,7 +64,7 @@ namespace Utils
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
         public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
         {
-            if (first.CompareTo(second) >= 0)
+            if (first?.CompareTo(second) > 0 || Comparer<T>.Default.Compare(first, second) > 0)
             {
                 throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
             }
@@ -75,7 +76,8 @@ namespace Utils
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
         public static void IsGreater<T>(T first, T second) where T : IComparable
         {
-            if (first.CompareTo(second) < 0)
+            if (first?.CompareTo(second) <= 0 || Comparer<T>.Default.Compare(first, second) <= 0)
+
             {
                 throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
             }
@@ -87,7 +89,7 @@ namespace Utils
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
         public static void IsGreaterOrEqual<T>(T first, T second) where T : IComparable
         {
-            if (first.CompareTo(second) <= 0)
+            if (first?.CompareTo(second) < 0 || Comparer<T>.Default.Compare(first, second) < 0)
             {
                 throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
             }

@@ -9,6 +9,9 @@ using Utils;
 
 namespace SyncList.Tests;
 
+/// <summary>
+/// Тесты многопоточного списка
+/// </summary>
 public class SyncLinkedListTests
 {
     private SyncLinkedList<string> _syncStringList;
@@ -36,12 +39,6 @@ public class SyncLinkedListTests
     [Example(100, 100)]
     public void MultiThreadAdd(int repeatCount, int threadCount, Exception exception)
     {
-        "Даны количественные значения для добавления по умолчанию".x(() =>
-        {
-            repeatCount = 100;
-            threadCount = 10;
-        });
-
 
         "Проверены входные значения".x(() =>
         {
@@ -78,7 +75,6 @@ public class SyncLinkedListTests
     /// <param name="exception">Контейнер для исключений.</param>
     /// <param name="expectedResults">Контейнер для ожидаемого вывода.</param>
     [Scenario]
-    [Example(0, 1, 1)]
     [Example(1, 1, 1)]
     [Example(1, 1, 10)]
     [Example(1, 10, 1)]
@@ -89,7 +85,12 @@ public class SyncLinkedListTests
     public void MultiThreadIteration_WithExistedList(int itemsCount, int repeatCount, int threadCount,
         string[] expectedResults, Exception exception)
     {
-        "Дано количество записей по умолчанию".x(() => itemsCount = 10);
+        "Проверены входные значения".x(() =>
+        {
+            Guard.IsGreater(itemsCount, 0);
+            Guard.IsGreater(repeatCount, 0);
+            Guard.IsGreater(threadCount, 0);
+        });
 
         "Дан существующий список".x(() =>
         {
@@ -98,13 +99,6 @@ public class SyncLinkedListTests
         });
 
         "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
-
-        "Проверены входные значения".x(() =>
-        {
-            Guard.IsGreater(itemsCount, 0);
-            Guard.IsGreater(repeatCount, 0);
-            Guard.IsGreater(threadCount, 0);
-        });
 
         "Когда выводятся элементы".x(() =>
             exception = Record.Exception(() =>
@@ -128,4 +122,7 @@ public class SyncLinkedListTests
         "Все полученные строки должны быть равны".x(() =>
             Assert.All(expectedResults, item => item.Should().BeEquivalentTo(_syncStringList.ToString())));
     }
+
+
+
 }
