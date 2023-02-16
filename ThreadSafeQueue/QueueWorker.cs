@@ -35,6 +35,16 @@ internal class QueueWorker
 
     #endregion
 
+    #region Конструктор
+
+    public QueueWorker(ThreadSafeQueue queue)
+    {
+        _id = IntSequenceProvider.GetNext();
+        _queue = queue;
+    }
+
+    #endregion
+    
     #region Методы
 
     internal void HandleWrite(IEnumerable<string> messages)
@@ -72,16 +82,6 @@ internal class QueueWorker
             ConsoleWriter.WriteEvent(
                 $"Reader {_id} read value {message.CropUpToLength(MAX_DEBUG_MESSAGE_LENGTH)}... with length of {messageLength}");
         }
-    }
-
-    #endregion
-
-    #region Конструктор
-
-    public QueueWorker(ThreadSafeQueue queue)
-    {
-        _id = IntSequenceProvider.GetNext();
-        _queue = queue;
     }
 
     #endregion

@@ -7,13 +7,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Philosophers", "Philosopher
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PiCalculationOptimized", "PiCalculationOptimized\PiCalculationOptimized.csproj", "{D0BF8748-3284-4A2D-BCCD-E3FA01236863}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Threads.Tests", "Threads.Tests\Threads.Tests.csproj", "{713012CF-FCFD-44EF-BBDE-98C721954DD1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafeQueue", "ThreadSafeQueue\ThreadSafeQueue.csproj", "{9E56F988-A221-438C-8CD3-F535532393FF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "Utils\Utils.csproj", "{B6BD1DB9-F1FF-4146-9C6F-AB13A21660E0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncListAccess", "SyncListAccess\SyncListAccess.csproj", "{EC477BAE-CF42-4BCA-B6B4-03049BB408BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{011C4DCF-F752-478E-8769-B321C0C672BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncList.Tests", "Tests\SyncList.Tests\SyncList.Tests.csproj", "{2557378B-0588-4665-823A-3E5A27C8D25D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Tests", "Tests\Utils.Tests\Utils.Tests.csproj", "{3B38E8CA-506E-424F-9E24-996B74BC5B17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,10 +36,6 @@ Global
 		{D0BF8748-3284-4A2D-BCCD-E3FA01236863}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0BF8748-3284-4A2D-BCCD-E3FA01236863}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0BF8748-3284-4A2D-BCCD-E3FA01236863}.Release|Any CPU.Build.0 = Release|Any CPU
-		{713012CF-FCFD-44EF-BBDE-98C721954DD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{713012CF-FCFD-44EF-BBDE-98C721954DD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{713012CF-FCFD-44EF-BBDE-98C721954DD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{713012CF-FCFD-44EF-BBDE-98C721954DD1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9E56F988-A221-438C-8CD3-F535532393FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9E56F988-A221-438C-8CD3-F535532393FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E56F988-A221-438C-8CD3-F535532393FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -48,5 +48,17 @@ Global
 		{EC477BAE-CF42-4BCA-B6B4-03049BB408BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC477BAE-CF42-4BCA-B6B4-03049BB408BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC477BAE-CF42-4BCA-B6B4-03049BB408BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2557378B-0588-4665-823A-3E5A27C8D25D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2557378B-0588-4665-823A-3E5A27C8D25D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2557378B-0588-4665-823A-3E5A27C8D25D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2557378B-0588-4665-823A-3E5A27C8D25D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B38E8CA-506E-424F-9E24-996B74BC5B17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B38E8CA-506E-424F-9E24-996B74BC5B17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B38E8CA-506E-424F-9E24-996B74BC5B17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B38E8CA-506E-424F-9E24-996B74BC5B17}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2557378B-0588-4665-823A-3E5A27C8D25D} = {011C4DCF-F752-478E-8769-B321C0C672BA}
+		{3B38E8CA-506E-424F-9E24-996B74BC5B17} = {011C4DCF-F752-478E-8769-B321C0C672BA}
 	EndGlobalSection
 EndGlobal
