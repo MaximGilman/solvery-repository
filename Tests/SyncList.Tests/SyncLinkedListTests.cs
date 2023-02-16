@@ -172,11 +172,15 @@ public class SyncLinkedListTests
 
 
     [Scenario]
-    [Example(1, 1)]
-    [Example(1, 10)]
-    [Example(10, 1)]
-    [Example(10, 10)]
-    public void MultiThreadIterationAndSort(int repeatCount, int threadCount, Exception exception)
+    [Example(1, 1, 1)]
+    [Example(1, 1, 10)]
+    [Example(1, 10, 1)]
+    [Example(10, 1, 1)]
+    [Example(10, 10, 10)]
+    [Example(10, 1, 10)]
+    [Example(10, 10, 1)]
+
+    public void MultiThreadIterationAndSort(int itemsCount, int repeatCount, int threadCount, Exception exception)
     {
 
         "Проверены входные значения".x(() =>
@@ -184,6 +188,12 @@ public class SyncLinkedListTests
                     Guard.IsGreater(repeatCount, 0);
                     Guard.IsGreater(threadCount, 0);
                 });
+
+        "Дан существующий список".x(() =>
+        {
+            var rawItems = Enumerable.Range(0, itemsCount).Select(x => x.ToString()).ToList();
+            rawItems.ForEach(x => _syncStringList.Add(x));
+        });
 
         "Когда начинаем писать и сортировать параллельно".x(() =>
         {
@@ -194,6 +204,7 @@ public class SyncLinkedListTests
                     var addThread = new Thread(() =>
                     {
                         _syncStringList.Sort();
+                        var str = _syncStringList.ToString();
                     });
                     addThread.Start();
                 }
