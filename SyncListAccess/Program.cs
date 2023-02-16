@@ -1,22 +1,76 @@
 ﻿using SyncListAccess;
+using Utils;
 
+#region Константы
 
-var list = new SyncLinkedList<string>();
+const string EXIT_COMMAND = "exit";
+const int SORT_INTERVAL = 5000;
+const string START_MESSAGE = @$"
+    Многопоточный список.
+    - Введите строку, чтобы добавить ее в список
+    - Введите {EXIT_COMMAND} чтобы выйти
+    - Введите пустую строку, чтобы вывести элементы списка
+";
 
-for (int i = 0; i < 100; i++)
+#endregion
+
+#region Методы
+
+void Start(Action action, CancellationToken token)
 {
-   list.Add(i.ToString());
-}
-
-for (var j = 0; j < 100; j++)
-{
-    for (var i = 0; i < 20; i++)
+    while (true)
     {
-        var addThread = new Thread(() =>
+        if (token.IsCancellationRequested)
         {
-            list.Sort();
-        });
-        addThread.Start();
+            Console.WriteLine("Сортировка остановлена. Прервано извне");
+            return;
+        }
+
+        Thread.Sleep(SORT_INTERVAL);
+        action.Invoke();
     }
 }
 
+void Run(string input, SyncLinkedList<string> list, CancellationTokenSource cts)
+{
+
+    try
+    {
+        while (!string.Equals(input, EXIT_COMMAND, StringComparison.InvariantCultureIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Console.WriteLine($"Текущее состояние списка: {list}");
+            }
+            else
+            {
+                list.Add(input);
+                Console.WriteLine($"Элемент {input.CropUpToLength(5)}.. добавлен");
+            }
+
+            input = Console.ReadLine();
+        }
+    }
+    finally
+    {
+        cts.Cancel();
+    }
+
+}
+
+#endregion
+
+#region Поля и свойства
+
+CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+var cancellationToken = cancelTokenSource.Token;
+
+var list = new SyncLinkedList<string>();
+
+var sortThread = new Thread(() => Start(list.Sort, cancellationToken));
+sortThread.Start();
+
+#endregion
+
+Console.WriteLine(START_MESSAGE);
+Run(Console.ReadLine(), list, cancelTokenSource);

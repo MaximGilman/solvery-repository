@@ -39,7 +39,6 @@ public class SyncLinkedListTests
     [Example(100, 100)]
     public void MultiThreadAdd(int repeatCount, int threadCount, Exception exception)
     {
-
         "Проверены входные значения".x(() =>
         {
             Guard.IsGreater(repeatCount, 0);
@@ -124,5 +123,84 @@ public class SyncLinkedListTests
     }
 
 
+    /// <summary>
+    /// Чтение записей из нескольких потоков
+    /// </summary>
+    /// <param name="itemsCount">Изначальное количество элементов в списке.</param>
+    /// <param name="repeatCount">Количество повторений.</param>
+    /// <param name="threadCount">Количество потоков.</param>
+    /// <param name="exception">Контейнер для исключений.</param>
+    /// <param name="expectedResults">Контейнер для ожидаемого вывода.</param>
+    [Scenario]
+    [Example(1, 1)]
+    [Example(1, 10)]
+    [Example(10, 1)]
+    [Example(10, 10)]
+    public void MultiThreadIteration_WithEmptyList(int repeatCount, int threadCount,
+        string[] expectedResults, Exception exception)
+    {
+        "Проверены входные значения".x(() =>
+        {
+            Guard.IsGreater(repeatCount, 0);
+            Guard.IsGreater(threadCount, 0);
+        });
 
+        "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
+
+        "Когда выводятся элементы".x(() =>
+            exception = Record.Exception(() =>
+            {
+                for (var repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
+                {
+                    for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
+                    {
+                        var answerIndex = repeatIndex;
+                        var addThread = new Thread(() =>
+                        {
+                            expectedResults[answerIndex] = _syncStringList.ToString();
+                        });
+                        addThread.Start();
+                    }
+                }
+            }));
+
+        "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
+        "Количество элементов не должно измениться".x(() => _syncStringList.Count.Should().Be(0));
+        @"Все полученные строки должны быть равны 'пустой выдаче'".x(() =>
+            Assert.All(expectedResults, item => item.Should().BeEquivalentTo("Empty")));
+    }
+
+
+    [Scenario]
+    [Example(1, 1)]
+    [Example(1, 10)]
+    [Example(10, 1)]
+    [Example(10, 10)]
+    public void MultiThreadIterationAndSort(int repeatCount, int threadCount, Exception exception)
+    {
+
+        "Проверены входные значения".x(() =>
+                {
+                    Guard.IsGreater(repeatCount, 0);
+                    Guard.IsGreater(threadCount, 0);
+                });
+
+        "Когда начинаем писать и сортировать параллельно".x(() =>
+        {
+            for (var j = 0; j < repeatCount; j++)
+            {
+                for (var i = 0; i < threadCount; i++)
+                {
+                    var addThread = new Thread(() =>
+                    {
+                        _syncStringList.Sort();
+                    });
+                    addThread.Start();
+                }
+            }
+        });
+
+        "Иногда возникает дедлок".x(() => {});
+
+    }
 }

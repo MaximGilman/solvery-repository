@@ -54,7 +54,7 @@
         {
             if (first?.CompareTo(second) >= 0 || Comparer<T>.Default.Compare(first, second) >= 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше указанного значения  {second}", nameof(first));
             }
         }
 
@@ -66,7 +66,7 @@
         {
             if (first?.CompareTo(second) > 0 || Comparer<T>.Default.Compare(first, second) > 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше указанного значения", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше или равно указанного значения {second}", nameof(first));
             }
         }
 
@@ -79,7 +79,7 @@
             if (first?.CompareTo(second) <= 0 || Comparer<T>.Default.Compare(first, second) <= 0)
 
             {
-                throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше указанного значения {second}", nameof(first));
             }
         }
 
@@ -91,7 +91,7 @@
         {
             if (first?.CompareTo(second) < 0 || Comparer<T>.Default.Compare(first, second) < 0)
             {
-                throw new ArgumentException($"Значение должно быть больше указанного значения", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше или равно указанного значения {second}", nameof(first));
             }
         }
     }

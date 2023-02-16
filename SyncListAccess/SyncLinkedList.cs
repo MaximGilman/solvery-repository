@@ -163,7 +163,6 @@ public class SyncLinkedList<T> where T : IComparable
 
     public override string ToString()
     {
-
         switch (this.Count)
         {
             case 0:
