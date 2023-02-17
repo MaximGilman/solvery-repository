@@ -14,12 +14,12 @@ public class SyncLinkedList<T> where T : IComparable
     /// <summary>
     /// Головной узел.
     /// </summary>
-    private Node<T> _head;
+    private Node<T> _sentinelHead;
 
     /// <summary>
     /// Хвост списка.
     /// </summary>
-    private Node<T> _tail;
+    private Node<T> _sentinelTail;
 
     /// <summary>
     /// Количество элементов.
@@ -33,9 +33,12 @@ public class SyncLinkedList<T> where T : IComparable
     {
         get
         {
-            lock (_head.Mutex)
+            lock (_sentinelHead.Mutex)
             {
-                return _count;
+                lock (_sentinelHead.Next.Mutex)
+                {
+                    return _count;
+                }
             }
         }
     }
@@ -46,10 +49,10 @@ public class SyncLinkedList<T> where T : IComparable
 
     public SyncLinkedList()
     {
-        _tail = new Node<T>(default);
-        _head = new Node<T>(default)
+        _sentinelTail = new Node<T>(default);
+        _sentinelHead = new Node<T>(default)
         {
-            Next = _tail
+            Next = _sentinelTail
         };
     }
 
@@ -63,7 +66,7 @@ public class SyncLinkedList<T> where T : IComparable
     /// <param name="item">Значение элемента.</param>
     public void Add(T item)
     {
-        lock (_head.Mutex)
+        lock (_sentinelHead.Mutex)
         {
             var itemNode = new Node<T>(item);
 
@@ -71,12 +74,13 @@ public class SyncLinkedList<T> where T : IComparable
             {
                 if (Count == 0)
                 {
-                    _head = itemNode;
+                    _sentinelHead.Next = itemNode;
+                    itemNode.Next = _sentinelTail;
                 }
                 else
                 {
-                    itemNode.Next = _head;
-                    _head = itemNode;
+                    itemNode.Next = _sentinelHead.Next;
+                    _sentinelHead.Next = itemNode;
                 }
 
                 _count++;
@@ -90,71 +94,6 @@ public class SyncLinkedList<T> where T : IComparable
     /// </summary>
     public void Sort()
     {
-        if (this.Count < 2)
-        {
-            return;
-        }
-
-        var sortCount = this.Count;
-        for (var i = 0; i <= sortCount; i++)
-        {
-            // Лочим именно 2 раза, т.к. Head - это реальный первый элемент, prev для него нет.
-            Monitor.Enter(_head.Mutex);
-            Monitor.Enter(_head.Mutex);
-            Monitor.Enter(_head.Next.Mutex);
-            // На первом элементе предыдущий - это он сам.
-            var prev = _head;
-            var current = _head;
-            var next = _head.Next;
-            while (next != _tail && next != null)
-            {
-                if (current > next)
-                {
-                    var outgoingNext = next.Next;
-
-                    if (current == _head)
-                    {
-                        _head = next;
-                    }
-                    else
-                    {
-                        prev.Next = next;
-                    }
-
-                    next.Next = current;
-                    current.Next = outgoingNext;
-
-                    Monitor.Exit(prev.Mutex);
-                    Monitor.Exit(current.Mutex);
-                    Monitor.Exit(next.Mutex);
-
-                    // Поскольку мы поменяли порядок, передвигать не нужно, только восстановить prev и next.
-                    prev = next;
-                    next = current.Next;
-                }
-                else
-                {
-                    Monitor.Exit(prev.Mutex);
-                    Monitor.Exit(current.Mutex);
-                    Monitor.Exit(next.Mutex);
-
-                    prev = current;
-                    current = current.Next;
-                    next = next.Next;
-                }
-
-
-                Monitor.Enter(prev.Mutex);
-                Monitor.Enter(current.Mutex);
-                if (next != _tail && next != null)
-                {
-                    Monitor.Enter(next.Mutex);
-                }
-            }
-
-            Monitor.Exit(prev.Mutex);
-            Monitor.Exit(current.Mutex);
-        }
     }
 
     #endregion
@@ -163,37 +102,37 @@ public class SyncLinkedList<T> where T : IComparable
 
     public override string ToString()
     {
-        switch (this.Count)
+        lock (_sentinelHead.Next.Mutex)
         {
-            case 0:
-                return $"Empty";
-            case 1:
-                return $"{_head}X";
+            switch (this.Count)
+            {
+                case 0:
+                    return "Empty";
+                case 1:
+                {
+                    return $"{_sentinelHead.Next}X";
+                }
+            }
         }
 
         var sb = new StringBuilder();
-        Monitor.Enter(_head.Mutex);
-        var cur = _head;
-        Monitor.Enter(cur.Next.Mutex);
-        var next = cur.Next;
-        while (true)
+        Monitor.Enter(_sentinelHead.Next.Mutex);
+        var current = _sentinelHead.Next;
+        Monitor.Enter(current.Next.Mutex);
+        var next = current.Next;
+        while (next != _sentinelTail)
         {
-            sb.Append(cur);
-            Monitor.Exit(cur.Mutex);
-            cur = next;
-
-            if (next.Next is { } newNext)
-            {
-                next = newNext;
-                Monitor.Enter(newNext.Mutex);
-            }
-            else
-            {
-                sb.Append(cur);
-                Monitor.Exit(cur.Mutex);
-                break;
-            }
+            sb.Append(current);
+            Monitor.Exit(current.Mutex);
+            current = next;
+            Monitor.Enter(next.Next.Mutex);
+            next = next.Next;
         }
+
+        sb.Append(current);
+
+        Monitor.Exit(current.Mutex);
+        Monitor.Exit(_sentinelTail.Mutex);
 
         sb.Append('X'); // Конец списка
         return sb.ToString();
