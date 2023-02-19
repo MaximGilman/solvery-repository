@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace SyncListAccess;
 // TODO: Переделать head и Tail
@@ -102,22 +102,29 @@ public class SyncLinkedList<T> where T : IComparable
 
     public override string ToString()
     {
-        lock (_sentinelHead.Next.Mutex)
+        lock (_sentinelHead.Mutex)
         {
-            switch (this.Count)
+            lock (_sentinelHead.Next.Mutex)
             {
-                case 0:
-                    return "Empty";
-                case 1:
+                switch (this.Count)
                 {
-                    return $"{_sentinelHead.Next}X";
+                    case 0:
+                        return "Empty";
+                    case 1:
+                    {
+                        return $"{_sentinelHead.Next}X";
+                    }
                 }
             }
         }
 
         var sb = new StringBuilder();
+        Monitor.Enter(_sentinelHead.Mutex);
         Monitor.Enter(_sentinelHead.Next.Mutex);
+
         var current = _sentinelHead.Next;
+
+        Monitor.Exit(_sentinelHead.Mutex);
         Monitor.Enter(current.Next.Mutex);
         var next = current.Next;
         while (next != _sentinelTail)
