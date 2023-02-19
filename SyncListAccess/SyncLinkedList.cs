@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace SyncListAccess;
 // TODO: Переделать head и Tail
@@ -94,6 +94,46 @@ public class SyncLinkedList<T> where T : IComparable
     /// </summary>
     public void Sort()
     {
+        var sortCount = this.Count;
+        if (sortCount < 2)
+        {
+            return;
+        }
+
+        for (var i = 0; i <= sortCount; i++)
+        {
+            Monitor.Enter(_sentinelHead.Mutex);
+            Monitor.Enter(_sentinelHead.Next.Mutex);
+            Monitor.Enter(_sentinelHead.Next.Next.Mutex);
+
+            var prev = _sentinelHead;
+            var current = _sentinelHead.Next;
+            var next = _sentinelHead.Next.Next;
+
+            while (next != _sentinelTail)
+            {
+                var outgoingNext = next.Next;
+
+                if (current.CompareTo(next) > 0) 
+                {
+                    prev.Next = next;
+                    next.Next = current;
+                    current.Next = outgoingNext;
+                }
+
+                Monitor.Enter(outgoingNext.Mutex);
+
+                var outgoingPrev = prev;
+                prev = prev.Next;
+                current = prev.Next;
+                next = current.Next;
+                Monitor.Exit(outgoingPrev.Mutex);
+            }
+
+            Monitor.Exit(prev.Mutex);
+            Monitor.Exit(current.Mutex);
+            Monitor.Exit(next.Mutex);
+        }
     }
 
     #endregion

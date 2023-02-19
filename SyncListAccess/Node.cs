@@ -50,9 +50,5 @@ public class Node<T> : IComparable<Node<T>>
 
     public override string ToString() => _data == null ? string.Empty : $"{_data} - ";
 
-    public static bool operator >(Node<T> left, Node<T> right) => left.CompareTo(right) > 0;
-
-    public static bool operator <(Node<T> left, Node<T> right) => left.CompareTo(right) < 0;
-
     #endregion
 }
