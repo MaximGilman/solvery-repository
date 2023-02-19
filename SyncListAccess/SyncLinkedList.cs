@@ -114,7 +114,7 @@ public class SyncLinkedList<T> where T : IComparable
             {
                 var outgoingNext = next.Next;
 
-                if (current.CompareTo(next) > 0) 
+                if (current.CompareTo(next) > 0)
                 {
                     prev.Next = next;
                     next.Next = current;

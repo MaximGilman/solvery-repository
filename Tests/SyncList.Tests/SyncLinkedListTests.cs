@@ -25,6 +25,38 @@ public class SyncLinkedListTests
         "Дана коллекция".x(() => _syncStringList = new SyncLinkedList<string>());
     }
 
+
+    [Scenario]
+    [Example(0)]
+    [Example(1)]
+    [Example(10)]
+    [Example(1000)]
+    public void ToStringEquals(int count, SyncLinkedList<int> list)
+    {
+        "Дан список".x(() =>
+        {
+            list = new SyncLinkedList<int>();
+            for (int i = 0; i < count; i++)
+            {
+                list.Add(i);
+            }
+        });
+
+        "После сортировки".x(() => list.Sort());
+
+        "Вывод равен ожидаемому".x(() =>
+        {
+            var expected = count switch
+            {
+                0 => "Empty",
+                1 => "0 - X",
+                _ => $"{string.Join(" - ", Enumerable.Range(0, count))} - X"
+            };
+            expected.Should().BeEquivalentTo(list.ToString());
+        });
+    }
+
+
     /// <summary>
     /// Добавление элементов в список
     /// </summary>
@@ -179,15 +211,13 @@ public class SyncLinkedListTests
     [Example(10, 10, 10)]
     [Example(10, 1, 10)]
     [Example(10, 10, 1)]
-
     public void MultiThreadIterationAndSort(int itemsCount, int repeatCount, int threadCount, Exception exception)
     {
-
         "Проверены входные значения".x(() =>
-                {
-                    Guard.IsGreater(repeatCount, 0);
-                    Guard.IsGreater(threadCount, 0);
-                });
+        {
+            Guard.IsGreater(repeatCount, 0);
+            Guard.IsGreater(threadCount, 0);
+        });
 
         "Дан существующий список".x(() =>
         {
@@ -211,7 +241,6 @@ public class SyncLinkedListTests
             }
         });
 
-        "Иногда возникает дедлок".x(() => {});
-
+        "Иногда возникает дедлок".x(() => { });
     }
 }
