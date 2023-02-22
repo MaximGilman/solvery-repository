@@ -59,6 +59,7 @@ public class SyncReadWriteListTests
                         addThread.Start();
                     }
                 }
+                Thread.Sleep(1000);
             }));
 
 
