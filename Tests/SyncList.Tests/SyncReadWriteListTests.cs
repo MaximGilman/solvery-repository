@@ -13,9 +13,9 @@ namespace SyncList.Tests;
 /// <summary>
 /// Тесты многопоточного списка
 /// </summary>
-public class SyncLinkedListTests
+public class SyncReadWriteListTests
 {
-    private SyncLinkedList<string> _syncStringList;
+    private SyncRwLinkedList<string> _syncStringList;
 
     /// <summary>
     /// Для каждого сценария создаем коллекцию.
@@ -23,38 +23,7 @@ public class SyncLinkedListTests
     [Background]
     public void InitCollection()
     {
-        "Дана коллекция".x(() => _syncStringList = new SyncLinkedList<string>());
-    }
-
-
-    [Scenario]
-    [Example(0)]
-    [Example(1)]
-    [Example(10)]
-    [Example(1000)]
-    public void ToStringEquals(int count, SyncLinkedList<int> list)
-    {
-        "Дан список".x(() =>
-        {
-            list = new SyncLinkedList<int>();
-            for (int i = 0; i < count; i++)
-            {
-                list.Add(i);
-            }
-        });
-
-        "После сортировки".x(() => list.Sort());
-
-        "Вывод равен ожидаемому".x(() =>
-        {
-            var expected = count switch
-            {
-                0 => "Empty",
-                1 => "0 - X",
-                _ => $"{string.Join(" - ", Enumerable.Range(0, count))} - X"
-            };
-            expected.Should().BeEquivalentTo(list.ToString());
-        });
+        "Дана коллекция".x(() => _syncStringList = new SyncRwLinkedList<string>());
     }
 
 
@@ -91,6 +60,7 @@ public class SyncLinkedListTests
                     }
                 }
             }));
+
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов должно быть равно количеству операция добавления".x(() =>
@@ -201,47 +171,5 @@ public class SyncLinkedListTests
         "Количество элементов не должно измениться".x(() => _syncStringList.Count.Should().Be(0));
         @"Все полученные строки должны быть равны 'пустой выдаче'".x(() =>
             Assert.All(expectedResults, item => item.Should().BeEquivalentTo("Empty")));
-    }
-
-
-    [Scenario]
-    [Example(1, 1, 1)]
-    [Example(1, 1, 10)]
-    [Example(1, 10, 1)]
-    [Example(10, 1, 1)]
-    [Example(10, 10, 10)]
-    [Example(10, 1, 10)]
-    [Example(10, 10, 1)]
-    public void MultiThreadIterationAndSort(int itemsCount, int repeatCount, int threadCount, Exception exception)
-    {
-        "Проверены входные значения".x(() =>
-        {
-            Guard.IsGreater(repeatCount, 0);
-            Guard.IsGreater(threadCount, 0);
-        });
-
-        "Дан существующий список".x(() =>
-        {
-            var rawItems = Enumerable.Range(0, itemsCount).Select(x => x.ToString()).ToList();
-            rawItems.ForEach(x => _syncStringList.Add(x));
-        });
-
-        "Когда начинаем писать и сортировать параллельно".x(() =>
-        {
-            for (var j = 0; j < repeatCount; j++)
-            {
-                for (var i = 0; i < threadCount; i++)
-                {
-                    var addThread = new Thread(() =>
-                    {
-                        _syncStringList.Sort();
-                        var str = _syncStringList.ToString();
-                    });
-                    addThread.Start();
-                }
-            }
-        });
-
-        "Иногда возникает дедлок".x(() => { });
     }
 }

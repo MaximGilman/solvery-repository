@@ -4,12 +4,7 @@ public class ReadWriteLock
 {
     private int _readerCount = 0;
     private int _writerCount = 0;
-    private readonly object _lockObject;
-
-    public ReadWriteLock(object lockObject)
-    {
-        _lockObject = lockObject;
-    }
+    private readonly object _lockObject = new();
 
     /// <summary>
     /// Захватить поток на чтение.
@@ -18,7 +13,7 @@ public class ReadWriteLock
     {
         lock (_lockObject)
         {
-            while (_writerCount >0)
+            while (_writerCount > 0)
             {
                 Monitor.Wait(_lockObject);
             }
@@ -35,7 +30,7 @@ public class ReadWriteLock
         lock (_lockObject)
         {
             _readerCount--;
-            if (_readerCount == 0)
+            if (_readerCount <= 0)
             {
                 Monitor.PulseAll(_lockObject);
             }
@@ -51,7 +46,7 @@ public class ReadWriteLock
         {
             while (_writerCount > 0 || _readerCount > 0)
             {
-                Monitor.Exit(_lockObject);
+                Monitor.Wait(_lockObject);
             }
 
             _writerCount++;

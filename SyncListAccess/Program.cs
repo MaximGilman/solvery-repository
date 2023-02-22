@@ -1,4 +1,4 @@
-﻿using SyncListAccess;
+﻿using SyncListAccess.Lists;
 using Utils;
 
 #region Константы
@@ -46,6 +46,7 @@ void Run(string input, SyncLinkedList<string> list, CancellationTokenSource cts)
             {
                 list.Add(input);
                 Console.WriteLine($"Элемент {input.CropUpToLength(5)}.. добавлен");
+                Console.WriteLine(list.Count);
             }
 
             input = Console.ReadLine();

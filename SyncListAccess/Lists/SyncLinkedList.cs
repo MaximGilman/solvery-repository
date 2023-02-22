@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace SyncListAccess;
+namespace SyncListAccess.Lists;
 
 /// <summary>
 /// Многопоточный список.
@@ -13,7 +13,7 @@ public class SyncLinkedList<T> where T : IComparable
     /// <summary>
     /// Головной узел.
     /// </summary>
-    private Node<T> _sentinelHead;
+    private readonly FineGrainedNode<T> _sentinelHead;
 
     /// <summary>
     /// Количество элементов.
@@ -40,7 +40,7 @@ public class SyncLinkedList<T> where T : IComparable
 
     public SyncLinkedList()
     {
-        _sentinelHead = new Node<T>(default);
+        _sentinelHead = new FineGrainedNode<T>(default);
     }
 
     #endregion
@@ -55,7 +55,7 @@ public class SyncLinkedList<T> where T : IComparable
     {
         lock (_sentinelHead.Mutex)
         {
-            var itemNode = new Node<T>(item);
+            var itemNode = new FineGrainedNode<T>(item);
 
             lock (itemNode.Mutex)
             {
