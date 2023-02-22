@@ -1,7 +1,6 @@
 ﻿using System.Text;
 
 namespace SyncListAccess;
-// TODO: Переделать head и Tail
 
 /// <summary>
 /// Многопоточный список.
@@ -17,11 +16,6 @@ public class SyncLinkedList<T> where T : IComparable
     private Node<T> _sentinelHead;
 
     /// <summary>
-    /// Хвост списка.
-    /// </summary>
-    private Node<T> _sentinelTail;
-
-    /// <summary>
     /// Количество элементов.
     /// </summary>
     private int _count;
@@ -35,10 +29,7 @@ public class SyncLinkedList<T> where T : IComparable
         {
             lock (_sentinelHead.Mutex)
             {
-                lock (_sentinelHead.Next.Mutex)
-                {
-                    return _count;
-                }
+                return _count;
             }
         }
     }
@@ -49,11 +40,7 @@ public class SyncLinkedList<T> where T : IComparable
 
     public SyncLinkedList()
     {
-        _sentinelTail = new Node<T>(default);
-        _sentinelHead = new Node<T>(default)
-        {
-            Next = _sentinelTail
-        };
+        _sentinelHead = new Node<T>(default);
     }
 
     #endregion
@@ -75,7 +62,6 @@ public class SyncLinkedList<T> where T : IComparable
                 if (Count == 0)
                 {
                     _sentinelHead.Next = itemNode;
-                    itemNode.Next = _sentinelTail;
                 }
                 else
                 {
@@ -104,13 +90,17 @@ public class SyncLinkedList<T> where T : IComparable
         {
             Monitor.Enter(_sentinelHead.Mutex);
             Monitor.Enter(_sentinelHead.Next.Mutex);
-            Monitor.Enter(_sentinelHead.Next.Next.Mutex);
+            if (_sentinelHead.Next.Next != null)
+            {
+                Monitor.Enter(_sentinelHead.Next.Next.Mutex);
+            }
+
 
             var prev = _sentinelHead;
             var current = _sentinelHead.Next;
             var next = _sentinelHead.Next.Next;
 
-            while (next != _sentinelTail)
+            while (next != null)
             {
                 var outgoingNext = next.Next;
 
@@ -121,7 +111,10 @@ public class SyncLinkedList<T> where T : IComparable
                     current.Next = outgoingNext;
                 }
 
-                Monitor.Enter(outgoingNext.Mutex);
+                if (outgoingNext != null)
+                {
+                    Monitor.Enter(outgoingNext.Mutex);
+                }
 
                 var outgoingPrev = prev;
                 prev = prev.Next;
@@ -132,7 +125,11 @@ public class SyncLinkedList<T> where T : IComparable
 
             Monitor.Exit(prev.Mutex);
             Monitor.Exit(current.Mutex);
-            Monitor.Exit(next.Mutex);
+            if (next != null)
+            {
+                Monitor.Exit(next.Mutex);
+            }
+
         }
     }
 
@@ -144,16 +141,16 @@ public class SyncLinkedList<T> where T : IComparable
     {
         lock (_sentinelHead.Mutex)
         {
+            if (this.Count == 0)
+            {
+                return "Empty";
+            }
+
             lock (_sentinelHead.Next.Mutex)
             {
-                switch (this.Count)
+                if (this.Count == 1)
                 {
-                    case 0:
-                        return "Empty";
-                    case 1:
-                    {
-                        return $"{_sentinelHead.Next}X";
-                    }
+                    return $"{_sentinelHead.Next}X";
                 }
             }
         }
@@ -167,19 +164,22 @@ public class SyncLinkedList<T> where T : IComparable
         Monitor.Exit(_sentinelHead.Mutex);
         Monitor.Enter(current.Next.Mutex);
         var next = current.Next;
-        while (next != _sentinelTail)
+        while (next != null)
         {
             sb.Append(current);
             Monitor.Exit(current.Mutex);
             current = next;
-            Monitor.Enter(next.Next.Mutex);
+            if (next.Next != null)
+            {
+                Monitor.Enter(next.Next.Mutex);
+            }
+
             next = next.Next;
         }
 
         sb.Append(current);
 
         Monitor.Exit(current.Mutex);
-        Monitor.Exit(_sentinelTail.Mutex);
 
         sb.Append('X'); // Конец списка
         return sb.ToString();
