@@ -1,5 +1,6 @@
 using System;
 using FluentAssertions;
+using Utils.Guards;
 using Xbehave;
 using Xunit;
 

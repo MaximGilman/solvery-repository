@@ -1,4 +1,4 @@
-﻿namespace Utils
+﻿namespace Utils.Guards
 {
     /// <summary>
     /// Валидатор.

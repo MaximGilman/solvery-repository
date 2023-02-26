@@ -1,12 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading;
-using SyncListAccess;
 using Xunit;
 using Xbehave;
 using FluentAssertions;
 using SyncListAccess.Lists;
-using Utils;
+using Utils.Guards;
 
 namespace SyncList.Tests;
 

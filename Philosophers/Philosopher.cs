@@ -1,6 +1,7 @@
-﻿namespace Philosophers;
+﻿using Utils;
+using Utils.Guards;
 
-using Utils;
+namespace Philosophers;
 
 internal class Philosopher
 {
