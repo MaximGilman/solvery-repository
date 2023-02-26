@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Utils.Constants;
 
 namespace Utils;
 
@@ -12,7 +13,7 @@ public static class ConfigurationProvider
     /// </summary>
     private static readonly IConfiguration _configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json", optional: true).Build();
+        .AddJsonFile(FileNameConstants.APP_SETTINGS_JSON, optional: true).Build();
 
     /// <summary>
     /// Получить значение из секции конфигурации по имени.
