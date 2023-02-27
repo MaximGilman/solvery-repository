@@ -44,8 +44,8 @@ internal class Program
 
         return settings.IsWatcher switch
         {
-            true => new WatcherNode(instanceId, settings.GroupIp, settings.Port, loggerFactory.CreateLogger<WatcherNode>()),
-            false => new Node(instanceId, settings.GroupIp, settings.Port, loggerFactory.CreateLogger<Node>())
+            true => new WatcherNode(instanceId, settings.BroadcastIp, settings.Port, loggerFactory.CreateLogger<WatcherNode>()),
+            false => new Node(instanceId, settings.BroadcastIp, settings.Port, loggerFactory.CreateLogger<Node>())
         };
     }
 

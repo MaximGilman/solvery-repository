@@ -3,7 +3,7 @@
 public class Settings
 {
     public int Port { get; set; }
-    public string GroupIp { get; set; }
+    public string BroadcastIp { get; set; }
     public bool IsWatcher { get; set; }
     public string LogsPath { get; set; }
 
@@ -15,8 +15,8 @@ public class Settings
         Utils.Guards.Guard.IsLessOrEqual(Port, 9999);
         Utils.Guards.Guard.IsGreater(Port, 0);
 
-        Utils.Guards.Guard.IsNotNullOrWhiteSpace(GroupIp);
-        Utils.Guards.Guard.IsMatch(GroupIp, IP_REGEX);
+        Utils.Guards.Guard.IsNotNullOrWhiteSpace(BroadcastIp);
+        Utils.Guards.Guard.IsMatch(BroadcastIp, IP_REGEX);
 
         try
         {

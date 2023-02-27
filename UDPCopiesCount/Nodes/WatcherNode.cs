@@ -12,7 +12,7 @@ public class WatcherNode : Node, IWatcherNode
     /// <summary>
     /// Время ожидания между обновлениями списка активных узлов.
     /// </summary>
-    private const int SIBLINGS_UPDATE_INTERVAL = 1000;
+    private const int SIBLINGS_UPDATE_INTERVAL = 3000;
 
 
     /// <summary>
@@ -37,14 +37,13 @@ public class WatcherNode : Node, IWatcherNode
     }
 
     /// <summary>
-    /// Слушать сообщения от соседей.
+    /// Начать цикл прослушки статуса.
     /// </summary>
     /// <param name="cancellationToken">Токен отмены.</param>
     public async Task StartReceiveStatusAsync(CancellationToken cancellationToken)
     {
         using var receiver = new UdpClient(this._port);
         receiver.JoinMulticastGroup(this._broadcastIpAddress);
-        //receiver.MulticastLoopback = false; // отключаем получение своих же сообщений
         while (!cancellationToken.IsCancellationRequested)
         {
             _logger.LogInformation("Watcher {id} waiting message on {ip}:{port}", this._id, this._broadcastIpAddress, this._port);
@@ -62,21 +61,21 @@ public class WatcherNode : Node, IWatcherNode
             {
                 _logger.LogError("Received message was not in the correct format. {message}", ex.Message);
             }
-
         }
     }
 
+    /// <summary>
+    /// Имитация работы узла.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
     public override async Task DoSomeWork(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Instance {id} start do some work as watcher", this._id);
 
-        var tasks = new List<Task>
-        {
+        await Task.WhenAll(
             Task.Run(async () => await StartReceiveStatusAsync(cancellationToken), cancellationToken),
             Task.Run(async () => await base.DoSomeWork(cancellationToken), cancellationToken),
-            Task.Run(() =>  StartUpdateIsAlive(CancellationToken.None), cancellationToken)
-        };
-        await Task.WhenAll(tasks);
+            Task.Run(() => StartUpdateIsAlive(CancellationToken.None), cancellationToken));
     }
 
     /// <summary>

@@ -18,33 +18,39 @@ public class Node : INode
     }
 
     protected readonly ILogger<Node> _logger;
-    protected Guid _id { get;  }
+    protected Guid _id { get; }
     protected IPAddress _broadcastIpAddress { get; }
     protected int _port { get; }
 
     private const int HEARTBEAT_INTERVAL = 3000;
-    protected async Task SendStatusAsync(string message, CancellationToken cancellationToken)
-    {
-        using var sender = new UdpClient();
-        byte[] data = Encoding.UTF8.GetBytes(message);
 
-         await sender.SendAsync(data, new IPEndPoint(this._broadcastIpAddress, this._port), cancellationToken);
-        _logger.LogInformation("Instance {id} send status to {ip}: {port}", this._id, this._broadcastIpAddress, this._port);
+    /// <summary>
+    /// Начать цикл отправки статуса.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="cancellationToken"></param>
+    private async Task StartSendingStatusAsync(CancellationToken cancellationToken)
+    {
+        var aliveMessage = $"Instance {_id} is alive";
+        byte[] data = Encoding.UTF8.GetBytes(aliveMessage);
+
+        using var sender = new UdpClient();
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await sender.SendAsync(data, new IPEndPoint(this._broadcastIpAddress, this._port), cancellationToken);
+            _logger.LogInformation("Instance {id} send status to {ip}: {port}", this._id, this._broadcastIpAddress, this._port);
+            Thread.Sleep(HEARTBEAT_INTERVAL);
+        }
     }
 
+    /// <summary>
+    /// Имитация работы узла.
+    /// </summary>
+    /// <param name="cancellationToken">Токен отмены.</param>
     public virtual async Task DoSomeWork(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Instance {id} start do some work", this._id);
-
-        var aliveMessage = $"Instance {_id} is alive";
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            _logger.LogInformation("Instance {id} doing work", this._id);
-            await SendStatusAsync(aliveMessage, cancellationToken);
-            Thread.Sleep(HEARTBEAT_INTERVAL);
-        }
-
+        await StartSendingStatusAsync(cancellationToken);
         _logger.LogInformation("Instance's {id} work canceled", this._id);
-
     }
 }
