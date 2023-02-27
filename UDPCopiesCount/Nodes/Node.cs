@@ -22,7 +22,7 @@ public class Node : INode
     protected IPAddress _broadcastIpAddress { get; }
     protected int _port { get; }
 
-    private const int WORK_SLEEP_TIMEOUT = 3000;
+    private const int HEARTBEAT_INTERVAL = 3000;
     protected async Task SendStatusAsync(string message, CancellationToken cancellationToken)
     {
         using var sender = new UdpClient();
@@ -41,7 +41,7 @@ public class Node : INode
         {
             _logger.LogInformation("Instance {id} doing work", this._id);
             await SendStatusAsync(aliveMessage, cancellationToken);
-            Thread.Sleep(WORK_SLEEP_TIMEOUT);
+            Thread.Sleep(HEARTBEAT_INTERVAL);
         }
 
         _logger.LogInformation("Instance's {id} work canceled", this._id);

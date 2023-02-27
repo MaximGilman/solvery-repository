@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Utils.Guards;
 
 namespace Utils.Extensions;
 
@@ -15,11 +16,14 @@ public static class StringExtensions
     public static string CropUpToLength(this string str, int length)
         => str.Length >= length ? str[..length] : str;
 
+    private const string GUID_REGEX = @"(?i)[{(]?[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}[)}]?";
 
     public static Guid SubstringGuid(this string str)
     {
-        return Guid.Parse(Regex.Replace(str,
-            @"(?im)^[{(]?[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}[)}]?$",
-            "'$0'"));
+        var match = Regex.Match(str, GUID_REGEX);
+
+        Guard.IsMatch(match.Value, GUID_REGEX);
+        return Guid.Parse(match.Value);
+
     }
 }

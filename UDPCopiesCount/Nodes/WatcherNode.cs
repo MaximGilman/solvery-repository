@@ -12,7 +12,7 @@ public class WatcherNode : Node, IWatcherNode
     /// <summary>
     /// Время ожидания между обновлениями списка активных узлов.
     /// </summary>
-    private const int SIBLINGS_UPDATE_SLEEP_TIMEOUT = 1000;
+    private const int SIBLINGS_UPDATE_INTERVAL = 1000;
 
 
     /// <summary>
@@ -23,7 +23,7 @@ public class WatcherNode : Node, IWatcherNode
     /// <summary>
     /// Количество узлов (с учетом себя).
     /// </summary>
-    public int NodesCount => _siblingsWithAliveTime.Count + 1;
+    private int _nodesCount => _siblingsWithAliveTime.IsEmpty ? 1 : _siblingsWithAliveTime.Count;
 
     /// <summary>
     /// Интервал, в котором считаем, что узел еще живой, даже если не получали сообщения.
@@ -34,7 +34,6 @@ public class WatcherNode : Node, IWatcherNode
         logger)
     {
         _logger.LogInformation("Instance {id} set as watcher", this._id);
-        Task.Run(() => StartUpdateIsAlive(CancellationToken.None));
     }
 
     /// <summary>
@@ -44,22 +43,26 @@ public class WatcherNode : Node, IWatcherNode
     public async Task StartReceiveStatusAsync(CancellationToken cancellationToken)
     {
         using var receiver = new UdpClient(this._port);
-        receiver.JoinMulticastGroup(this._broadcastIpAddress); // Возникнет ошибка. МБ из-за локальной тачки
-        receiver.MulticastLoopback = false; // отключаем получение своих же сообщений
-
+        receiver.JoinMulticastGroup(this._broadcastIpAddress);
+        //receiver.MulticastLoopback = false; // отключаем получение своих же сообщений
         while (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Watcher {id} receiving message from {ip}:{port}", this._id,
-                this._broadcastIpAddress, this._port);
+            _logger.LogInformation("Watcher {id} waiting message on {ip}:{port}", this._id, this._broadcastIpAddress, this._port);
             var result = await receiver.ReceiveAsync(cancellationToken);
-            _logger.LogInformation("Watcher {id} received message from {ip}:{port}", this._id, this._broadcastIpAddress,
-                this._port);
+            _logger.LogInformation("Watcher {id} received message on {ip}:{port}", this._id, this._broadcastIpAddress, this._port);
 
-            string message = Encoding.UTF8.GetString(result.Buffer);
-            var siblingGuid = message.SubstringGuid();
+            try
+            {
+                string message = Encoding.UTF8.GetString(result.Buffer);
+                var siblingGuid = message.SubstringGuid();
+                _siblingsWithAliveTime.AddOrUpdate(siblingGuid, DateTime.Now, (key, oldValue) => DateTime.Now);
+                _logger.LogInformation("Watcher {id} apply that {siblingGuid} is alive", this._id, siblingGuid);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError("Received message was not in the correct format. {message}", ex.Message);
+            }
 
-            _siblingsWithAliveTime.AddOrUpdate(siblingGuid, DateTime.Now, (key, oldValue) => DateTime.Now);
-            _logger.LogInformation("Watcher {id} apply that {siblingGuid} is alive", this._id, siblingGuid);
         }
     }
 
@@ -67,8 +70,13 @@ public class WatcherNode : Node, IWatcherNode
     {
         _logger.LogInformation("Instance {id} start do some work as watcher", this._id);
 
-        await StartReceiveStatusAsync(cancellationToken);
-        await base.DoSomeWork(cancellationToken);
+        var tasks = new List<Task>
+        {
+            Task.Run(async () => await StartReceiveStatusAsync(cancellationToken), cancellationToken),
+            Task.Run(async () => await base.DoSomeWork(cancellationToken), cancellationToken),
+            Task.Run(() =>  StartUpdateIsAlive(CancellationToken.None), cancellationToken)
+        };
+        await Task.WhenAll(tasks);
     }
 
     /// <summary>
@@ -94,9 +102,9 @@ public class WatcherNode : Node, IWatcherNode
             }
 
             _logger.LogInformation("Watcher {id} finished nodes update. Current nodes count: {count}", this._id,
-                this.NodesCount);
+                this._nodesCount);
 
-            Thread.Sleep(SIBLINGS_UPDATE_SLEEP_TIMEOUT);
+            Thread.Sleep(SIBLINGS_UPDATE_INTERVAL);
         }
     }
 
