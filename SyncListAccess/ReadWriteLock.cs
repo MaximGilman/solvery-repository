@@ -1,9 +1,27 @@
-﻿namespace SyncListAccess;
+﻿using System.Net;
 
-public class ReadWriteLock
+namespace SyncListAccess;
+
+public sealed class ReadWriteLock
 {
     private int _readerCount = 0;
-    private int _writerCount = 0;
+    private bool _isWriterInLock = false;
+
+    /// <summary>
+    /// Флаг, ждет ли писатель, при работающих читателях.
+    /// </summary>
+    private bool _isWriterWaiting = false;
+
+    /// <summary>
+    /// Флаг, ждут ли читатели, при работающем писателе.
+    /// </summary>
+    private bool _isAnyReaderWaiting = false;
+
+    /// <summary>
+    /// Кто пропустит (читатель или писатель) в случае, если оба ждут.
+    /// </summary>
+    private ReadWriteLockActor _currentExpectant = ReadWriteLockActor.Reader;
+
     private readonly object _lockObject = new();
 
     /// <summary>
@@ -13,7 +31,8 @@ public class ReadWriteLock
     {
         lock (_lockObject)
         {
-            while (_writerCount > 0)
+            _isAnyReaderWaiting = true;
+            while (_isWriterInLock || !CanProceed(ReadWriteLockActor.Reader))
             {
                 Monitor.Wait(_lockObject);
             }
@@ -32,6 +51,7 @@ public class ReadWriteLock
             _readerCount--;
             if (_readerCount <= 0)
             {
+                _isAnyReaderWaiting = false;
                 Monitor.PulseAll(_lockObject);
             }
         }
@@ -44,12 +64,13 @@ public class ReadWriteLock
     {
         lock (_lockObject)
         {
-            while (_writerCount > 0 || _readerCount > 0)
+            _isWriterWaiting = true;
+            while (_isWriterInLock || _readerCount > 0 || !CanProceed(ReadWriteLockActor.Writer))
             {
                 Monitor.Wait(_lockObject);
             }
 
-            _writerCount++;
+            _isWriterInLock = true;
         }
     }
 
@@ -60,8 +81,36 @@ public class ReadWriteLock
     {
         lock (_lockObject)
         {
-            _writerCount--;
+            _isWriterInLock = false;
+            _isWriterWaiting = false;
             Monitor.PulseAll(_lockObject);
+        }
+    }
+
+    /// <summary>
+    /// Проверить, может ли операция войти в крит. секцию с т.з. честности.
+    /// </summary>
+    /// <param name="currentActor">Операция. Чтение или запись.</param>
+    private bool CanProceed(ReadWriteLockActor currentActor)
+    {
+        switch (_isWriterWaiting, _isWriterWaiting)
+        {
+            // если ждут оба, смотрим на "пропускающего".
+            // пропуская вперед, операция гарантирует себе вход следующей.
+            case (true, true):
+            {
+                bool canCurrentProceed = currentActor != _currentExpectant;
+                _currentExpectant = currentActor;
+                return canCurrentProceed;
+            }
+            case (false, false):
+            {
+                throw new ApplicationException("Был вызван запрос на вход в критическую секцию, но ни один поток не ожидает входа.");
+            }
+            default:
+            {
+                return true;
+            }
         }
     }
 }
