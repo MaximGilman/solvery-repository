@@ -63,7 +63,8 @@ void Run(string input, SyncLinkedList<string> list, CancellationTokenSource cts)
 
 #region Поля и свойства
 
-CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+using var cancelTokenSource = new CancellationTokenSource();
+
 var cancellationToken = cancelTokenSource.Token;
 
 var list = new SyncLinkedList<string>();

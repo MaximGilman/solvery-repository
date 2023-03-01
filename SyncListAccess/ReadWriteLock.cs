@@ -82,8 +82,8 @@ public sealed class ReadWriteLock
         lock (_lockObject)
         {
             _isWriterInLock = false;
-            _isWriterWaiting = false;
             Monitor.PulseAll(_lockObject);
+            _isWriterWaiting = false;
         }
     }
 
@@ -93,7 +93,7 @@ public sealed class ReadWriteLock
     /// <param name="currentActor">Операция. Чтение или запись.</param>
     private bool CanProceed(ReadWriteLockActor currentActor)
     {
-        switch (_isWriterWaiting, _isWriterWaiting)
+        switch (_isWriterWaiting, _isAnyReaderWaiting)
         {
             // если ждут оба, смотрим на "пропускающего".
             // пропуская вперед, операция гарантирует себе вход следующей.

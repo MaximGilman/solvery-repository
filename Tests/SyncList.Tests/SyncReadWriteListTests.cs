@@ -14,7 +14,7 @@ namespace SyncList.Tests;
 /// </summary>
 public class SyncReadWriteListTests
 {
-    private SyncRwLinkedList<string> _syncStringList;
+    private SyncRwLinkedList<string> _syncRwStringList;
 
     /// <summary>
     /// Для каждого сценария создаем коллекцию.
@@ -22,7 +22,7 @@ public class SyncReadWriteListTests
     [Background]
     public void InitCollection()
     {
-        "Дана коллекция".x(() => _syncStringList = new SyncRwLinkedList<string>());
+        "Дана коллекция".x(() => _syncRwStringList = new SyncRwLinkedList<string>());
     }
 
 
@@ -54,7 +54,7 @@ public class SyncReadWriteListTests
                     for (var threadIndex = 0; threadIndex < threadCount; threadIndex++)
                     {
                         var itemValue = threadIndex.ToString();
-                        var addThread = new Thread(() => { _syncStringList.Add(itemValue); });
+                        var addThread = new Thread(() => { _syncRwStringList.Add(itemValue); });
                         addThread.Start();
                     }
                 }
@@ -64,7 +64,7 @@ public class SyncReadWriteListTests
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов должно быть равно количеству операция добавления".x(() =>
-            _syncStringList.Count.Should().Be(repeatCount * threadCount));
+            _syncRwStringList.Count.Should().Be(repeatCount * threadCount));
     }
 
 
@@ -97,7 +97,7 @@ public class SyncReadWriteListTests
         "Дан существующий список".x(() =>
         {
             var rawItems = Enumerable.Range(0, itemsCount).Select(x => x.ToString()).ToList();
-            rawItems.ForEach(x => _syncStringList.Add(x));
+            rawItems.ForEach(x => _syncRwStringList.Add(x));
         });
 
         "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
@@ -112,7 +112,7 @@ public class SyncReadWriteListTests
                         var answerIndex = repeatIndex;
                         var addThread = new Thread(() =>
                         {
-                            expectedResults[answerIndex] = _syncStringList.ToString();
+                            expectedResults[answerIndex] = _syncRwStringList.ToString();
                         });
                         addThread.Start();
                     }
@@ -120,9 +120,11 @@ public class SyncReadWriteListTests
             }));
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
-        "Количество элементов не должно измениться".x(() => _syncStringList.Count.Should().Be(itemsCount));
+        "Количество элементов не должно измениться".x(() => _syncRwStringList.Count.Should().Be(itemsCount));
+
+        "Ждем завершения работы".x(() => Thread.Sleep(100));
         "Все полученные строки должны быть равны".x(() =>
-            Assert.All(expectedResults, item => item.Should().BeEquivalentTo(_syncStringList.ToString())));
+            Assert.All(expectedResults, item => item.Should().BeEquivalentTo(_syncRwStringList.ToString())));
     }
 
 
@@ -160,7 +162,7 @@ public class SyncReadWriteListTests
                         var answerIndex = repeatIndex;
                         var addThread = new Thread(() =>
                         {
-                            expectedResults[answerIndex] = _syncStringList.ToString();
+                            expectedResults[answerIndex] = _syncRwStringList.ToString();
                         });
                         addThread.Start();
                     }
@@ -168,7 +170,7 @@ public class SyncReadWriteListTests
             }));
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
-        "Количество элементов не должно измениться".x(() => _syncStringList.Count.Should().Be(0));
+        "Количество элементов не должно измениться".x(() => _syncRwStringList.Count.Should().Be(0));
         @"Все полученные строки должны быть равны 'пустой выдаче'".x(() =>
             Assert.All(expectedResults, item => item.Should().BeEquivalentTo("Empty")));
     }

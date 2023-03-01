@@ -57,20 +57,17 @@ public class SyncLinkedList<T> where T : IComparable
         {
             var itemNode = new FineGrainedNode<T>(item);
 
-            lock (itemNode.Mutex)
+            if (_count == 0)
             {
-                if (Count == 0)
-                {
-                    _sentinelHead.Next = itemNode;
-                }
-                else
-                {
-                    itemNode.Next = _sentinelHead.Next;
-                    _sentinelHead.Next = itemNode;
-                }
-
-                _count++;
+                _sentinelHead.Next = itemNode;
             }
+            else
+            {
+                itemNode.Next = _sentinelHead.Next;
+                _sentinelHead.Next = itemNode;
+            }
+            _count++;
+
         }
     }
 
@@ -125,10 +122,6 @@ public class SyncLinkedList<T> where T : IComparable
 
             Monitor.Exit(prev.Mutex);
             Monitor.Exit(current.Mutex);
-            if (next != null)
-            {
-                Monitor.Exit(next.Mutex);
-            }
 
         }
     }
@@ -141,29 +134,23 @@ public class SyncLinkedList<T> where T : IComparable
     {
         lock (_sentinelHead.Mutex)
         {
-            if (this.Count == 0)
+            switch (_count)
             {
-                return "Empty";
-            }
-
-            lock (_sentinelHead.Next.Mutex)
-            {
-                if (this.Count == 1)
-                {
-                    return $"{_sentinelHead.Next}X";
-                }
+                case 0: return "Empty";
+                case 1: return $"{_sentinelHead.Next}X";
             }
         }
 
         var sb = new StringBuilder();
+
+        // блокируем голову, чтобы гарантировать, что получаем актуальное состояние.
         Monitor.Enter(_sentinelHead.Mutex);
-        Monitor.Enter(_sentinelHead.Next.Mutex);
-
         var current = _sentinelHead.Next;
-
+        Monitor.Enter(current.Mutex);
+        var next = current.Next;
         Monitor.Exit(_sentinelHead.Mutex);
         Monitor.Enter(current.Next.Mutex);
-        var next = current.Next;
+
         while (next != null)
         {
             sb.Append(current);

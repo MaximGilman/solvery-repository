@@ -24,7 +24,6 @@ public class SyncRwLinkedList<T> where T : IComparable
     {
         get
         {
-            // TODO: пофиксить порядок. Мб вынести лок наружу
             _sentinelHead.Lock.AcquireReaderLock();
             var count = _count;
             _sentinelHead.Lock.ReleaseReaderLock();
