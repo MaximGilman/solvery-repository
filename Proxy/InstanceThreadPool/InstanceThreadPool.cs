@@ -4,7 +4,7 @@ using Utils.Guards;
 
 namespace InstanceThreadPool;
 
-public class InstanceThreadPool
+public sealed class InstanceThreadPool
 {
     private readonly ThreadPriority _threadPriority;
     private readonly string _name;
