@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils.Tests", "Tests\Utils.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UDPCopiesCount", "UDPCopiesCount\UDPCopiesCount.csproj", "{C7D4ECA0-FB2F-4600-B166-6AF0531BB82C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Proxy", "Proxy", "{3D2A53F9-A624-48BC-A0D3-8C2EC8BFBA49}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InstanceThreadPool", "Proxy\InstanceThreadPool\InstanceThreadPool.csproj", "{6CBFED5E-E77F-429D-8D88-D121141EC55F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,9 +66,14 @@ Global
 		{C7D4ECA0-FB2F-4600-B166-6AF0531BB82C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7D4ECA0-FB2F-4600-B166-6AF0531BB82C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7D4ECA0-FB2F-4600-B166-6AF0531BB82C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CBFED5E-E77F-429D-8D88-D121141EC55F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CBFED5E-E77F-429D-8D88-D121141EC55F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CBFED5E-E77F-429D-8D88-D121141EC55F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CBFED5E-E77F-429D-8D88-D121141EC55F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2557378B-0588-4665-823A-3E5A27C8D25D} = {011C4DCF-F752-478E-8769-B321C0C672BA}
 		{3B38E8CA-506E-424F-9E24-996B74BC5B17} = {011C4DCF-F752-478E-8769-B321C0C672BA}
+		{6CBFED5E-E77F-429D-8D88-D121141EC55F} = {3D2A53F9-A624-48BC-A0D3-8C2EC8BFBA49}
 	EndGlobalSection
 EndGlobal
