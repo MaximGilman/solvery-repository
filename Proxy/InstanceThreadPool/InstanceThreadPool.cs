@@ -9,8 +9,8 @@ public class InstanceThreadPool
     private readonly ThreadPriority _threadPriority;
     private readonly string _name;
     private readonly Thread[] _threads;
-    private readonly AutoResetEvent _workingEvent = new(false);
-    private readonly AutoResetEvent _executeEvent = new(true);
+    private readonly AutoResetEvent _actionExecuteEvent = new(false);
+    private readonly AutoResetEvent _actionQueueAccessEvent = new(true);
 
     // ToDo: переделать свою очередь на generic  и заиспользовать здесь.
     private readonly ConcurrentQueue<(object parameter, Action<object> action)> _actionsQueue = new();
@@ -24,6 +24,7 @@ public class InstanceThreadPool
         _name = name;
 
         _threads = new Thread[maxThreadsCount];
+        Init();
     }
 
     private void Init()
@@ -46,11 +47,11 @@ public class InstanceThreadPool
 
     public void Execute(object parameter, Action<object> action)
     {
-        _executeEvent.WaitOne(); // запрос доступа к очереди
+        _actionQueueAccessEvent.WaitOne(); // запрос доступа к очереди
         _actionsQueue.Enqueue((parameter, action));
-        _executeEvent.Set(); // отпускаем доступ к очереди
+        _actionQueueAccessEvent.Set(); // отпускаем доступ к очереди
 
-        _workingEvent.Set(); // Пингуем работника
+        _actionExecuteEvent.Set(); // Пингуем работника
     }
 
     private void WorkingThread()
@@ -58,26 +59,35 @@ public class InstanceThreadPool
         var threadName = Thread.CurrentThread.Name;
         while (true)
         {
-            _workingEvent.WaitOne();
-            _executeEvent.WaitOne();
+            _actionExecuteEvent.WaitOne();
+            _actionQueueAccessEvent.WaitOne();
+
+            while (_actionsQueue.IsEmpty)
+            {
+                _actionQueueAccessEvent.Set();
+                _actionExecuteEvent.WaitOne();
+                _actionQueueAccessEvent.WaitOne();
+            }
 
             if (!_actionsQueue.TryDequeue(out var actionWithParameter))
             {
-                _executeEvent.Set();
+                _actionQueueAccessEvent.Set();
                 throw new ApplicationException("Произошла ошибка при чтении задачи из очереди");
             }
-            else
+
+            if (!_actionsQueue.IsEmpty)
             {
-                _executeEvent.Set();
-                var (parameter, action) = actionWithParameter;
-                try
-                {
-                    action(parameter);
-                }
-                catch (Exception ex)
-                {
-                    Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", threadName, ex);
-                }
+                _actionExecuteEvent.Set();
+            }
+            _actionQueueAccessEvent.Set();
+            var (parameter, action) = actionWithParameter;
+            try
+            {
+                action(parameter);
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("Ошибка выполнения задания в потоке {0}:{1}", threadName, ex);
             }
         }
     }
