@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NLog;
 using NLog.Extensions.Logging;
-using NLog.Targets;
 using UDPCopiesCount.Nodes;
-using Utils;
 using Utils.Constants;
 
 namespace UDPCopiesCount;
@@ -14,10 +11,15 @@ internal class Program
     public static async Task Main()
     {
         var node = ConfigureAndCreateNode();
-        await node.DoSomeWork(CancellationToken.None);
+        var ctn = CancellationToken.None;
+        await Task.WhenAll(
+            Task.Run(async () => await node.StartReceiveStatusAsync(ctn), ctn),
+            Task.Run(async () => await node.StartSendingStatusAsync(ctn), ctn),
+            Task.Run(async () => await node.StartUpdateIsAlive(ctn), ctn));
+
     }
 
-    private static INode ConfigureAndCreateNode()
+    private static WatchableNode ConfigureAndCreateNode()
     {
         var loggerFactory = LoggerFactory.Create(builder => builder.AddNLog());
         var programLogger = loggerFactory.CreateLogger<Program>();
@@ -40,24 +42,6 @@ internal class Program
         }
 
         var instanceId = Guid.NewGuid();
-        ReconfigureNlogPath(settings.LogsPath, instanceId);
-
-        return settings.IsWatcher switch
-        {
-            true => new WatcherNode(instanceId, settings.BroadcastIp, settings.Port, loggerFactory.CreateLogger<WatcherNode>()),
-            false => new Node(instanceId, settings.BroadcastIp, settings.Port, loggerFactory.CreateLogger<Node>())
-        };
-    }
-
-    /// <summary>
-    /// Переконфигурировать логгер на GUID инстанса.
-    /// </summary>
-    /// <param name="logsPath">Путь до папки с логами.</param>
-    /// <param name="instanceGuid">ИД узла.</param>
-    private static void ReconfigureNlogPath(string logsPath, Guid instanceGuid)
-    {
-        var target = (FileTarget)LogManager.Configuration.FindTargetByName("logfile");
-        target.FileName = $"{logsPath}/{instanceGuid}-log.txt";
-        LogManager.ReconfigExistingLoggers();
+        return new WatchableNode(instanceId, settings.Port, loggerFactory.CreateLogger<WatchableNode>());
     }
 }
