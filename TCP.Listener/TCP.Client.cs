@@ -14,12 +14,16 @@ public static class TCP_Client
 
         try
         {
-            var ipEndPoint = new IPEndPoint(IPAddress.Loopback, PORT);
+            var clientSocketEndPoint = new IPEndPoint(IPAddress.Loopback, PORT);
             Console.WriteLine("Start working...");
-            using var client = new TcpClient(ipEndPoint); // Создали клиента и забайндили на эндпоинт
+            using var client = new TcpClient(clientSocketEndPoint); // Создали клиента и забайндили на эндпоинт
             Console.WriteLine("TCP client bound");
-            await client.ConnectAsync(ipEndPoint, cancellationToken);
-            Console.WriteLine($"TCP client connected: { client.Connected}");
+
+            var targetEndPoint = new IPEndPoint(IPAddress.Loopback, PORT + 1);
+
+            // Ожидается, что будет уже ждать с той стороны сервер.
+            await client.ConnectAsync(targetEndPoint, cancellationToken);
+            Console.WriteLine($"TCP client connected: {client.Connected}");
 
             await using var stream = client.GetStream();
             var bytesRead = 0;
@@ -42,5 +46,4 @@ public static class TCP_Client
             Console.WriteLine(ex);
         }
     }
-
 }

@@ -14,7 +14,6 @@ public static class MyTcpListener
         var listener = createTcpListener(port);
         Console.WriteLine($"TcpListener created on {listener.LocalEndpoint}");
 
-
         try
         {
             Console.WriteLine("Start listening");
@@ -68,12 +67,12 @@ public static class MyTcpListener
 
     private static TcpListener createTcpListener(int port)
     {
-        if (TcpPortUtils.IsPortAvailable(port))
+        if (TcpPortUtils.IsTcpPortAvailable(port))
         {
-            return new TcpListener(new IPEndPoint(IPAddress.Loopback, port));
+            return new TcpListener(IPAddress.Loopback, port);
         }
 
         Console.WriteLine($"Port {port} was not available. Create on some other free");
-        return new TcpListener(new IPEndPoint(IPAddress.Loopback, 0));
+        return new TcpListener(IPAddress.Loopback, 0);
     }
 }
