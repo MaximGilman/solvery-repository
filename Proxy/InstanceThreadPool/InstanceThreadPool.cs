@@ -10,6 +10,7 @@ public sealed class InstanceThreadPool
     private readonly string _name;
     private readonly Thread[] _threads;
     private readonly ConcurrentQueue<(object parameter, Action<object> action)> _actionsQueue = new();
+    private readonly AutoResetEvent _actionExecuteEvent = new(false);
 
     public InstanceThreadPool(int maxThreadsCount, ThreadPriority threadPriority = ThreadPriority.Normal,
         string name = null)
@@ -43,6 +44,8 @@ public sealed class InstanceThreadPool
     public void Execute(object parameter, Action<object> action)
     {
         _actionsQueue.Enqueue((parameter, action));
+        _actionExecuteEvent.Set(); // Пингуем работника
+
     }
 
     private void WorkingThread()
@@ -52,8 +55,19 @@ public sealed class InstanceThreadPool
         var threadName = Thread.CurrentThread.Name;
         while (true)
         {
+
+            while (_actionsQueue.IsEmpty)
+            {
+                _actionExecuteEvent.WaitOne();
+            }
+
             if (_actionsQueue.TryDequeue(out var actionWithParameter))
             {
+                if (!_actionsQueue.IsEmpty)
+                {
+                    _actionExecuteEvent.Set();
+                }
+
                 var (parameter, action) = actionWithParameter;
                 try
                 {
