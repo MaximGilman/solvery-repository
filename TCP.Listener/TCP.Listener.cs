@@ -1,28 +1,30 @@
 ﻿using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using TCP.Listener.Utils;
 using Utils.Guards;
 
 namespace TCP.Listener;
 
-public static class TCP_Listener
+public static class MyTcpListener
 {
-    private const int PORT = 13000;
-    public static async Task Execute(CancellationToken cancellationToken)
+    public static async Task Execute(int port, CancellationToken cancellationToken)
     {
-        Guard.IsValidPort(PORT);
+        Guard.IsValidPort(port);
+        var listener = createTcpListener(port);
+        Console.WriteLine($"TcpListener created on {listener.LocalEndpoint}");
 
-        var listener = new TcpListener(new IPEndPoint(IPAddress.Loopback, PORT));
 
         try
         {
+            Console.WriteLine("Start listening");
             listener.Start();
 
             var bytes = new byte[256];
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                Console.Write("Waiting for a connection... ");
+                Console.WriteLine("Waiting for a connection... ");
 
                 using var client = await listener.AcceptTcpClientAsync(cancellationToken);
                 Console.WriteLine("Connected");
@@ -31,23 +33,25 @@ public static class TCP_Listener
                 int bytesRead;
                 long totalBytesTransferred = 0;
                 double currentTransferSpeed = 0;
-                double averageransferSpeed = 0;
+                double averageTransferSpeed = 0;
                 var totalTime = TimeSpan.Zero;
                 var sw = new Stopwatch();
-
                 sw.Start();
+
                 while ((bytesRead = await stream.ReadAsync(bytes, cancellationToken)) != 0)
                 {
                     totalBytesTransferred += bytesRead;
                     currentTransferSpeed = bytesRead / sw.Elapsed.TotalSeconds;
                     totalTime += sw.Elapsed;
 
-                    averageransferSpeed = totalBytesTransferred / totalTime.TotalSeconds;
+                    averageTransferSpeed = totalBytesTransferred / totalTime.TotalSeconds;
 
                     var data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
+
+                    Console.Clear();
                     Console.WriteLine($"Received: {data}");
                     Console.WriteLine($"Inst. speed: {currentTransferSpeed} bytes/s");
-                    Console.WriteLine($"Avg. speed: {averageransferSpeed} bytes/s");
+                    Console.WriteLine($"Avg. speed: {averageTransferSpeed} bytes/s");
 
                     if (!sw.IsRunning || sw.Elapsed.TotalSeconds > 1)
                     {
@@ -60,5 +64,16 @@ public static class TCP_Listener
         {
             listener.Stop();
         }
+    }
+
+    private static TcpListener createTcpListener(int port)
+    {
+        if (TcpPortUtils.IsPortAvailable(port))
+        {
+            return new TcpListener(new IPEndPoint(IPAddress.Loopback, port));
+        }
+
+        Console.WriteLine($"Port {port} was not available. Create on some other free");
+        return new TcpListener(new IPEndPoint(IPAddress.Loopback, 0));
     }
 }
