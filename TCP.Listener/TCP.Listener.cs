@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using Utils.Guards;
 
@@ -18,7 +19,7 @@ public static class TCP_Listener
             listener.Start();
 
             var bytes = new byte[256];
-            string data = null;
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 Console.Write("Waiting for a connection... ");
@@ -27,12 +28,31 @@ public static class TCP_Listener
                 Console.WriteLine("Connected");
                 var stream = client.GetStream();
 
-                int i;
+                int bytesRead;
+                long totalBytesTransferred = 0;
+                double currentTransferSpeed = 0;
+                double averageransferSpeed = 0;
+                var totalTime = TimeSpan.Zero;
+                var sw = new Stopwatch();
 
-                while ((i = await stream.ReadAsync(bytes, cancellationToken)) != 0)
+                sw.Start();
+                while ((bytesRead = await stream.ReadAsync(bytes, cancellationToken)) != 0)
                 {
-                    data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                    Console.WriteLine("Received: {0}", data);
+                    totalBytesTransferred += bytesRead;
+                    currentTransferSpeed = bytesRead / sw.Elapsed.TotalSeconds;
+                    totalTime += sw.Elapsed;
+
+                    averageransferSpeed = totalBytesTransferred / totalTime.TotalSeconds;
+
+                    var data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
+                    Console.WriteLine($"Received: {data}");
+                    Console.WriteLine($"Inst. speed: {currentTransferSpeed} bytes/s");
+                    Console.WriteLine($"Avg. speed: {averageransferSpeed} bytes/s");
+
+                    if (!sw.IsRunning || sw.Elapsed.TotalSeconds > 1)
+                    {
+                        sw.Restart();
+                    }
                 }
             }
         }
