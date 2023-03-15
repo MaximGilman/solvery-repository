@@ -9,12 +9,7 @@ public sealed class InstanceThreadPool
     private readonly ThreadPriority _threadPriority;
     private readonly string _name;
     private readonly Thread[] _threads;
-    private readonly AutoResetEvent _actionExecuteEvent = new(false);
-    private readonly AutoResetEvent _actionQueueAccessEvent = new(true);
-
-    // ToDo: переделать свою очередь на generic  и заиспользовать здесь.
     private readonly ConcurrentQueue<(object parameter, Action<object> action)> _actionsQueue = new();
-
 
     public InstanceThreadPool(int maxThreadsCount, ThreadPriority threadPriority = ThreadPriority.Normal,
         string name = null)
@@ -47,11 +42,7 @@ public sealed class InstanceThreadPool
 
     public void Execute(object parameter, Action<object> action)
     {
-        _actionQueueAccessEvent.WaitOne(); // запрос доступа к очереди
         _actionsQueue.Enqueue((parameter, action));
-        _actionQueueAccessEvent.Set(); // отпускаем доступ к очереди
-
-        _actionExecuteEvent.Set(); // Пингуем работника
     }
 
     private void WorkingThread()
@@ -59,27 +50,11 @@ public sealed class InstanceThreadPool
         var threadName = Thread.CurrentThread.Name;
         while (true)
         {
-            _actionExecuteEvent.WaitOne();
-            _actionQueueAccessEvent.WaitOne();
-
-            while (_actionsQueue.IsEmpty)
-            {
-                _actionQueueAccessEvent.Set();
-                _actionExecuteEvent.WaitOne();
-                _actionQueueAccessEvent.WaitOne();
-            }
 
             if (!_actionsQueue.TryDequeue(out var actionWithParameter))
             {
-                _actionQueueAccessEvent.Set();
                 throw new ApplicationException("Произошла ошибка при чтении задачи из очереди");
             }
-
-            if (!_actionsQueue.IsEmpty)
-            {
-                _actionExecuteEvent.Set();
-            }
-            _actionQueueAccessEvent.Set();
             var (parameter, action) = actionWithParameter;
             try
             {
