@@ -1,4 +1,4 @@
-﻿var threadPool = new InstanceThreadPool.InstanceThreadPool(10);
+﻿var threadPool = new InstanceThreadPool.InstanceThreadPool(3);
 
 var workToDone = Enumerable.Range(1, 100).Select(x=>$"message{x}");
 
@@ -11,6 +11,15 @@ foreach (var workItem in workToDone)
         Thread.Sleep(100);
         Console.WriteLine($"{message} finished");
     });
+}
+
+threadPool.Execute(async () => await MyMethodAsync());
+
+async Task MyMethodAsync()
+{
+    Console.WriteLine($"Async work");
+    await Task.Delay(1000);
+    Console.WriteLine($"Async work done.");
 }
 
 Console.ReadLine();
