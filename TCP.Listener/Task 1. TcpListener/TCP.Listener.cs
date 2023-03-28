@@ -6,12 +6,12 @@ using TCP.Listener.Utils;
 
 namespace TCP.Listener;
 
-public class MyTcpListener
+internal class MyTcpListener
 {
     private ILogger _logger { get; }
     private TcpListener _server { get; }
 
-    public MyTcpListener(ILoggerFactory loggerFactory, int? port = null)
+    internal MyTcpListener(ILoggerFactory loggerFactory, int? port = null)
     {
         this._logger = loggerFactory.CreateLogger<MyTcpListener>();
 
@@ -41,7 +41,7 @@ public class MyTcpListener
         }
     }
 
-    public async Task Execute(CancellationToken cancellationToken)
+    internal async Task Execute(CancellationToken cancellationToken)
     {
         try
         {
