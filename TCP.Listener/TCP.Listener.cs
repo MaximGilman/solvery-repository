@@ -8,8 +8,8 @@ namespace TCP.Listener;
 
 public class MyTcpListener
 {
-    private ILogger _logger { get; init; }
-    private TcpListener _server { get; init; }
+    private ILogger _logger { get; }
+    private TcpListener _server { get; }
 
     public MyTcpListener(ILoggerFactory loggerFactory, int? port = null)
     {
@@ -32,12 +32,12 @@ public class MyTcpListener
         catch (ArgumentException)
         {
             _logger.LogWarning("Port is not provided. It will be set automatically on TcpListener.Start()");
-            this._server = new TcpListener(new IPEndPoint(IPAddress.Loopback, port: 0));
+            this._server = new TcpListener(new IPEndPoint(IPAddress.Any, port: 0));
         }
         catch
         {
             _logger.LogWarning("Error accured while accessing port: {port}. It will be set automatically on TcpListener.Start()", port);
-            this._server = new TcpListener(new IPEndPoint(IPAddress.Loopback, port: 0));
+            this._server = new TcpListener(new IPEndPoint(IPAddress.Any, port: 0));
         }
     }
 
@@ -94,11 +94,6 @@ public class MyTcpListener
             _server.Stop();
             this._logger.LogInformation("Listener server stopped");
 
-        }
-
-        ReadOnlySpan<char> BytesAsSpan(byte [] bytes, int bytesRead)
-        {
-            return System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead).AsSpan();
         }
     }
 }
