@@ -7,7 +7,7 @@ public partial class Guard
     private const int MIN_PORT = 1024;
     private const int MAX_PORT = 65535;
     /// <summary>
-    /// Проверить, что строка не пустая.
+    /// Проверить, что порт находится в пределах клиентских портов.
     /// </summary>
     /// <param name="port">Текущее значение.</param>
     public static void IsValidPort(int port)
