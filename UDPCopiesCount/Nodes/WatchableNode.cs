@@ -62,7 +62,7 @@ internal sealed class WatchableNode
         {
             using var receiver = new UdpClient();
             receiver.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-            receiver.Client.Bind(new IPEndPoint(IPAddress.Loopback, _port));
+            receiver.Client.Bind(new IPEndPoint(IPAddress.Any, _port));
             while (!cancellationToken.IsCancellationRequested)
             {
                 _logger.LogDebug("Watcher {id} waiting message on port:{port}", this._id, this._port);
