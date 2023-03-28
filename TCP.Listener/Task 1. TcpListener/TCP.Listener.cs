@@ -58,7 +58,7 @@ internal class MyTcpListener
                 using var client = await _server.AcceptTcpClientAsync(cancellationToken);
                 this._logger.LogInformation("Tcp client connected");
 
-                var stream = client.GetStream();
+                await using var stream = client.GetStream();
 
                 int bytesRead;
                 long totalBytesTransferred = 0;
