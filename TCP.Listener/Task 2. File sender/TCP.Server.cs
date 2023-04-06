@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using TCP.Listener.Utils;
+using Utils.Constants;
 
 internal class TCP_Server
 {
@@ -70,9 +71,21 @@ internal class TCP_Server
                 break;
             }
         }
+        catch (SocketException ex)
+        {
+            _logger.LogError("Exception: {ex}. {help}", ex.Message, ExceptionHelpConstants.SocketExceptionHelpMessage);
+        }
+        catch (IOException ex)
+        {
+            _logger.LogError("Exception: {ex}. {help}", ex.Message, ExceptionHelpConstants.IOExceptionHelpMessage);
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogError("Exception: {ex}. {help}", ex.Message, ExceptionHelpConstants.OperationCanceledExceptionHelpMessage);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.LogError("Unhandled exception. {ex}", ex.Message);
         }
         finally
         {
