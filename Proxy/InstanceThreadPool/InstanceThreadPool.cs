@@ -1,42 +1,48 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Utils.Guards;
 
 namespace InstanceThreadPool;
 
-public sealed class InstanceThreadPool
+public sealed class InstanceThreadPool : IInstanceThreadPool
 {
     private readonly ThreadPriority _threadPriority;
-    private readonly string _name;
-    private readonly Thread[] _threads;
+    private readonly string _threadPoolName;
+    private readonly ImmutableArray<Thread> _threads;
     private readonly ConcurrentQueue<(object parameter, Action<object> action)> _actionsQueue = new();
     private readonly AutoResetEvent _actionExecuteEvent = new(false);
 
-    public InstanceThreadPool(int maxThreadsCount, ThreadPriority threadPriority = ThreadPriority.Normal,
-        string name = null)
+    public InstanceThreadPool(int maxThreadsCount) : this(maxThreadsCount, ThreadPriority.Normal, null)
+    {
+    }
+
+    private InstanceThreadPool(int maxThreadsCount, ThreadPriority threadPriority, string threadPoolName)
     {
         Guard.IsGreater(maxThreadsCount, 0);
         _threadPriority = threadPriority;
-        _name = name;
-
-        _threads = new Thread[maxThreadsCount];
-        Init();
+        _threadPoolName = threadPoolName;
+        _threads = GetImmutableThreadArray(maxThreadsCount);
     }
 
-    private void Init()
+    private ImmutableArray<Thread> GetImmutableThreadArray(int capacity)
     {
+        var immutableArrayBuilder = ImmutableArray.CreateBuilder<Thread>(capacity);
+
         for (var i = 0; i < _threads.Length; i++)
         {
-            var name = $"{nameof(InstanceThreadPool)}[{_name ?? GetHashCode().ToString("x")}]-Thread[{i}]";
+            var threadName = this.GetThreadName(i);
             var thread = new Thread(WorkingThread)
             {
-                Name = name,
+                Name = threadName,
                 IsBackground = true,
                 Priority = _threadPriority,
             };
-            _threads[i] = thread;
             thread.Start();
+            immutableArrayBuilder.Add(thread);
         }
+        Guard.IsEqual(immutableArrayBuilder.Capacity, immutableArrayBuilder.Count);
+        return immutableArrayBuilder.MoveToImmutable();
     }
 
     public void Execute(Action action) => Execute(null, _ => action());
@@ -44,18 +50,16 @@ public sealed class InstanceThreadPool
     public void Execute(object parameter, Action<object> action)
     {
         _actionsQueue.Enqueue((parameter, action));
-        _actionExecuteEvent.Set(); // Пингуем работника
-
+        _actionExecuteEvent.Set();
     }
 
     private void WorkingThread()
     {
-        SynchronizationContext.SetSynchronizationContext(new ThreadPoolSynchronizationContext(this));
+        SynchronizationContext.SetSynchronizationContext(new InstanceThreadPoolSynchronizationContext(this));
 
         var threadName = Thread.CurrentThread.Name;
         while (true)
         {
-
             while (_actionsQueue.IsEmpty)
             {
                 _actionExecuteEvent.WaitOne();
@@ -80,4 +84,7 @@ public sealed class InstanceThreadPool
             }
         }
     }
+
+    private string GetThreadName(int threadIndex) =>
+        $"{nameof(InstanceThreadPool)}[{_threadPoolName ?? GetHashCode().ToString("x")}]-Thread[{threadIndex}]";
 }
