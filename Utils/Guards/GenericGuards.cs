@@ -42,7 +42,7 @@
         /// <param name="expectedValue">Текущее значение.</param>
         public static void IsNotDefault<T>(T expectedValue)
         {
-            if (expectedValue?.Equals(default(T)) == true)
+            if (expectedValue == null || expectedValue.Equals(default(T)))
             {
                 throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию",
                     nameof(expectedValue));

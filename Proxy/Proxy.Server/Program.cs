@@ -1,25 +1,37 @@
 ﻿var threadPool = new InstanceThreadPool.InstanceThreadPool(3);
 
-var workToDone = Enumerable.Range(1, 100).Select(x=>$"message{x}");
+var tks = new CancellationTokenSource();
+var tkn = tks.Token;
+tkn.Register(() => { Console.WriteLine("was canceled"); });
 
-foreach (var workItem in workToDone)
+
+try
 {
-    threadPool.Execute(workItem, param =>
+    threadPool.QueueExecute(null);
+}
+catch
+{
+    Console.WriteLine("catched");
+}
+
+Task MyCancelableAction(CancellationToken cancellationToken)
+{
+    while (true)
     {
-        var message = (string)param;
-        Console.WriteLine($"Running {message} started");
-        Thread.Sleep(100);
-        Console.WriteLine($"{message} finished");
-    });
+        if (cancellationToken.IsCancellationRequested)
+        {
+            Console.WriteLine("stopped");
+
+            return Task.CompletedTask;
+        }
+        Console.WriteLine("Work");
+        Thread.Sleep(1000);
+    }
 }
 
-threadPool.Execute(async () => await MyMethodAsync());
+threadPool.QueueExecute(async (cancellationToken) => await MyCancelableAction(cancellationToken), tkn);
 
-async Task MyMethodAsync()
-{
-    Console.WriteLine($"Async work");
-    await Task.Delay(1000);
-    Console.WriteLine($"Async work done.");
-}
 
+Console.ReadLine();
+tks.Cancel();
 Console.ReadLine();
