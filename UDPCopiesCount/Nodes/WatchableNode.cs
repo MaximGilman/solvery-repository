@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using NLog;
 using Utils.Extensions;
+using Utils.Guards;
 
 namespace UDPCopiesCount.Nodes;
 
@@ -14,14 +15,17 @@ internal sealed class WatchableNode
         _logger = logFactory.GetCurrentClassLogger();
         _id = id;
         _port = port;
+        _aliveMessage = $"Instance {_id} is alive";
+
+        _siblingsIdsWithAliveTime.AddOrUpdate(_id, DateTime.Now, (_, _) => DateTime.Now);
     }
 
     private readonly Logger _logger;
-    private Guid _id { get; }
-    private int _port { get; }
-    private int _nodesInBroadcastCount => _siblingsIdsWithAliveTime.IsEmpty ? 1 : _siblingsIdsWithAliveTime.Count;
+    private readonly Guid _id;
+    private readonly int _port;
+    private readonly string _aliveMessage;
 
-    private static readonly TimeSpan _maxPastTimeIntervalToBelieveNodeIsAlive = TimeSpan.FromSeconds(5).Negate();
+    private static readonly TimeSpan _nodeKeepAliveInterval = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _siblingListUpdateInterval = TimeSpan.FromSeconds(3);
     private readonly ConcurrentDictionary<Guid, DateTime> _siblingsIdsWithAliveTime = new();
@@ -34,8 +38,9 @@ internal sealed class WatchableNode
     {
         try
         {
-            var aliveMessage = $"Instance {_id} is alive";
-            byte[] data = Encoding.UTF8.GetBytes(aliveMessage);
+            Memory<byte> data = Encoding.UTF8.GetBytes(this._aliveMessage).AsMemory();
+            UdpGuard.IsNoMaxDataSizeExceeded(data.Length);
+
             var ipEndPoint = new IPEndPoint(IPAddress.Broadcast, this._port);
             using var sender = new UdpClient();
             while (!cancellationToken.IsCancellationRequested)
@@ -72,7 +77,7 @@ internal sealed class WatchableNode
                 try
                 {
                     string message = Encoding.UTF8.GetString(result.Buffer);
-                    var siblingGuid = message.SubstringGuid();
+                    var siblingGuid = message.SubstringGuidFromWords();
                     _siblingsIdsWithAliveTime.AddOrUpdate(siblingGuid, DateTime.Now, (_, _) => DateTime.Now);
                     _logger.Debug("Watcher {id} apply that {siblingGuid} is alive", this._id, siblingGuid);
                 }
@@ -114,7 +119,7 @@ internal sealed class WatchableNode
                 }
 
                 _logger.Info("Watcher {id} finished nodes update. Current nodes count: {count}", this._id,
-                    this._nodesInBroadcastCount);
+                    this._siblingsIdsWithAliveTime.Count);
 
                 await Task.Delay(_siblingListUpdateInterval, cancellationToken);
             }
@@ -126,5 +131,5 @@ internal sealed class WatchableNode
     }
 
     private static bool IsStillAlive(DateTime lastAliveDateTime) =>
-        lastAliveDateTime >= DateTime.Now.Add(_maxPastTimeIntervalToBelieveNodeIsAlive.Negate());
+        lastAliveDateTime.Add(_nodeKeepAliveInterval) >= DateTime.Now;
 }
