@@ -21,9 +21,9 @@ internal sealed class WatchableNode
     private int _port { get; }
     private int _nodesInBroadcastCount => _siblingsIdsWithAliveTime.IsEmpty ? 1 : _siblingsIdsWithAliveTime.Count;
 
-    private const int IS_NODE_STILL_ALIVE_INTERVAL = 5000;
-    private const int HEARTBEAT_INTERVAL = 1000;
-    private const int SIBLING_LIST_UPDATE_INTERVAL = 3000;
+    private static readonly TimeSpan _maxPastTimeIntervalToBelieveNodeIsAlive = TimeSpan.FromSeconds(5).Negate();
+    private static readonly TimeSpan _heartbeatInterval = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan _siblingListUpdateInterval = TimeSpan.FromSeconds(3);
     private readonly ConcurrentDictionary<Guid, DateTime> _siblingsIdsWithAliveTime = new();
 
     /// <summary>
@@ -43,7 +43,7 @@ internal sealed class WatchableNode
                 await sender.SendAsync(data, ipEndPoint, cancellationToken);
                 _logger.Debug("Instance {id} broadcast status to {ip}: {port}", this._id, ipEndPoint.Address,
                     ipEndPoint.Port);
-                await Task.Delay(HEARTBEAT_INTERVAL, cancellationToken);
+                await Task.Delay(_heartbeatInterval, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -116,7 +116,7 @@ internal sealed class WatchableNode
                 _logger.Info("Watcher {id} finished nodes update. Current nodes count: {count}", this._id,
                     this._nodesInBroadcastCount);
 
-                await Task.Delay(SIBLING_LIST_UPDATE_INTERVAL, cancellationToken);
+                await Task.Delay(_siblingListUpdateInterval, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -126,5 +126,5 @@ internal sealed class WatchableNode
     }
 
     private static bool IsStillAlive(DateTime lastAliveDateTime) =>
-        lastAliveDateTime >= DateTime.Now.AddMilliseconds(-IS_NODE_STILL_ALIVE_INTERVAL);
+        lastAliveDateTime >= DateTime.Now.Add(_maxPastTimeIntervalToBelieveNodeIsAlive.Negate());
 }
