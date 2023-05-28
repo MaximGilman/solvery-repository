@@ -11,11 +11,13 @@
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
       <PackageReference Include="NLog" Version="5.1.2" />
-      <PackageReference Include="NLog.Config" Version="4.7.15" />
       <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="C:\Users\Gilman.MM\.nuget\packages\nlog.config\4.7.15\contentFiles\any\any\NLog.config">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="nlog.config" CopyToOutputDirectory="Always" />
         <None Update="appsettings.json" CopyToOutputDirectory="Always" />
     </ItemGroup>

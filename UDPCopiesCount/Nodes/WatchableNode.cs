@@ -2,24 +2,24 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
+using NLog;
 using Utils.Extensions;
 
 namespace UDPCopiesCount.Nodes;
 
 internal sealed class WatchableNode
 {
-    public WatchableNode(Guid id, int port, ILogger<WatchableNode> logger)
+    public WatchableNode(Guid id, int port, LogFactory logFactory)
     {
-        _logger = logger;
+        _logger = logFactory.GetCurrentClassLogger();
         _id = id;
         _port = port;
     }
 
-    private readonly ILogger<WatchableNode> _logger;
+    private readonly Logger _logger;
     private Guid _id { get; }
     private int _port { get; }
-    private int NodesInBroadcastCount => _siblingsIdsWithAliveTime.IsEmpty ? 1 : _siblingsIdsWithAliveTime.Count;
+    private int _nodesInBroadcastCount => _siblingsIdsWithAliveTime.IsEmpty ? 1 : _siblingsIdsWithAliveTime.Count;
 
     private const int IS_NODE_STILL_ALIVE_INTERVAL = 5000;
     private const int HEARTBEAT_INTERVAL = 1000;
@@ -41,14 +41,14 @@ internal sealed class WatchableNode
             while (!cancellationToken.IsCancellationRequested)
             {
                 await sender.SendAsync(data, ipEndPoint, cancellationToken);
-                _logger.LogDebug("Instance {id} broadcast status to {ip}: {port}", this._id, ipEndPoint.Address,
+                _logger.Debug("Instance {id} broadcast status to {ip}: {port}", this._id, ipEndPoint.Address,
                     ipEndPoint.Port);
                 await Task.Delay(HEARTBEAT_INTERVAL, cancellationToken);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.Error(ex.Message);
         }
     }
 
@@ -65,26 +65,26 @@ internal sealed class WatchableNode
             receiver.Client.Bind(new IPEndPoint(IPAddress.Any, _port));
             while (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("Watcher {id} waiting message on port:{port}", this._id, this._port);
+                _logger.Debug("Watcher {id} waiting message on port:{port}", this._id, this._port);
                 var result = await receiver.ReceiveAsync(cancellationToken);
-                _logger.LogDebug("Watcher {id} received message on port:{port}", this._id, this._port);
+                _logger.Debug("Watcher {id} received message on port:{port}", this._id, this._port);
 
                 try
                 {
                     string message = Encoding.UTF8.GetString(result.Buffer);
                     var siblingGuid = message.SubstringGuid();
                     _siblingsIdsWithAliveTime.AddOrUpdate(siblingGuid, DateTime.Now, (_, _) => DateTime.Now);
-                    _logger.LogDebug("Watcher {id} apply that {siblingGuid} is alive", this._id, siblingGuid);
+                    _logger.Debug("Watcher {id} apply that {siblingGuid} is alive", this._id, siblingGuid);
                 }
                 catch (ArgumentException ex)
                 {
-                    _logger.LogError("Received message was not in the correct format. {message}", ex.Message);
+                    _logger.Error("Received message was not in the correct format. {message}", ex.Message);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.Error(ex.Message);
         }
     }
 
@@ -98,7 +98,7 @@ internal sealed class WatchableNode
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogDebug("Watcher {id} starts to updateAlive nodes", this._id);
+                _logger.Debug("Watcher {id} starts to updateAlive nodes", this._id);
 
                 var notAliveNodeKeys = _siblingsIdsWithAliveTime.Where(x => !IsStillAlive(x.Value))
                     .Select(x => x.Key);
@@ -113,15 +113,15 @@ internal sealed class WatchableNode
                     }
                 }
 
-                _logger.LogInformation("Watcher {id} finished nodes update. Current nodes count: {count}", this._id,
-                    this.NodesInBroadcastCount);
+                _logger.Info("Watcher {id} finished nodes update. Current nodes count: {count}", this._id,
+                    this._nodesInBroadcastCount);
 
                 await Task.Delay(SIBLING_LIST_UPDATE_INTERVAL, cancellationToken);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
+            _logger.Error(ex.Message);
         }
     }
 
