@@ -10,7 +10,7 @@ public partial class Guard
     /// Проверить, что порт находится в пределах клиентских портов.
     /// </summary>
     /// <param name="port">Текущее значение.</param>
-    public static void IsValidPort(int port)
+    public static void IsValidClientPort(int port)
     {
         Guard.IsGreater(port, MIN_PORT);
         Guard.IsLess(port, MAX_PORT);

@@ -1,47 +1,37 @@
-﻿using System.Diagnostics;
+﻿using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
-using TCP.Listener.Utils;
+using Utils.Guards;
 
-namespace TCP.Listener;
+namespace TCP.Listener.Task_1._TcpListener;
 
-internal class MyTcpListener
+public class MyTcpListener
 {
     private ILogger _logger { get; }
     private TcpListener _server { get; }
+    private readonly AverageCalculator _averageCalculator = new();
+    private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Create(MAX_BUFFER_SIZE, MAX_BUCKET_ARRAY_AMOUNT);
+    private readonly StopWatchMeasurer _stopWatchMeasurer = new();
 
-    internal MyTcpListener(ILoggerFactory loggerFactory, int? port = null)
+    private const int BUFFER_SIZE = 256;
+    private const int MAX_BUFFER_SIZE = BUFFER_SIZE * 2;
+    private const int MAX_BUCKET_ARRAY_AMOUNT = 10;
+
+    public MyTcpListener(ILogger logger, int? port = null)
     {
-        this._logger = loggerFactory.CreateLogger<MyTcpListener>();
+        this._logger = logger;
 
-        try
+        if (port.HasValue)
         {
-            if (port == null)
-            {
-                throw new ArgumentException("Port is not provided");
-            }
-
-            var listener = TcpListener.Create(port.Value);
-            if (!TcpPortUtils.IsTcpPortAvailable(port.Value))
-            {
-                throw new ApplicationException("Port is busy");
-            }
-            _server = listener;
+            Guard.IsValidClientPort(port.Value);
         }
-        catch (ArgumentException)
-        {
-            _logger.LogWarning("Port is not provided. It will be set automatically on TcpListener.Start()");
-            this._server = new TcpListener(new IPEndPoint(IPAddress.Any, port: 0));
-        }
-        catch
-        {
-            _logger.LogWarning("Error accured while accessing port: {port}. It will be set automatically on TcpListener.Start()", port);
-            this._server = new TcpListener(new IPEndPoint(IPAddress.Any, port: 0));
-        }
+        _server = TcpListener.Create(port ?? 0);
     }
 
-    internal async Task Execute(CancellationToken cancellationToken)
+    public int GetPort() => ((IPEndPoint)this._server.LocalEndpoint).Port;
+
+    public async Task Execute(CancellationToken cancellationToken)
     {
         try
         {
@@ -49,7 +39,7 @@ internal class MyTcpListener
             var ipEndpoint = (IPEndPoint)this._server.LocalEndpoint;
             this._logger.LogInformation("Listener start listening on {address}:{port}", ipEndpoint.Address, ipEndpoint.Port);
 
-            var bytes = new byte[256];
+            var bytes = _arrayPool.Rent(BUFFER_SIZE);
 
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -60,40 +50,41 @@ internal class MyTcpListener
 
                 await using var stream = client.GetStream();
 
-                int bytesRead;
-                long totalBytesTransferred = 0;
-                double currentTransferSpeed = 0;
-                double averageTransferSpeed = 0;
-                TimeSpan totalTime = TimeSpan.Zero;
-                Stopwatch sw = new Stopwatch();
-                sw.Start();
-
-                while ((bytesRead = await stream.ReadAsync(bytes, cancellationToken)) != 0)
+                int bytesRead = 0;
+                TimeSpan elapsedTime;
+                while (true)
                 {
-                    totalBytesTransferred += bytesRead;
-                    currentTransferSpeed = bytesRead / sw.Elapsed.TotalSeconds;
-                    totalTime += sw.Elapsed;
+                    (bytesRead, elapsedTime) =
+                        await this._stopWatchMeasurer.MeasureAsync(() => stream.ReadAsync(bytes, cancellationToken));
 
-                    averageTransferSpeed = totalBytesTransferred / totalTime.TotalSeconds;
+                    if (bytesRead == 0)
+                    {
+                        return;
+                    }
 
-                    var data =System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
+                    _averageCalculator.AppendTotalTime(elapsedTime);
+                    _averageCalculator.AppendTotalTransferredBytesAmount(bytesRead);
+
+                    var data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
 
                     this._logger.LogInformation("Received: {data}", data);
-                    this._logger.LogInformation("Inst. speed: {currentTransferSpeed} bytes/s", currentTransferSpeed);
-                    this._logger.LogInformation("Avg. speed: {averageTransferSpeed} bytes/s", averageTransferSpeed);
-
-                    if (!sw.IsRunning || sw.Elapsed.TotalSeconds > 1)
-                    {
-                        sw.Restart();
-                    }
+                    this._logger.LogInformation("Inst. speed: {currentTransferSpeed} bytes/s",
+                        AverageCalculator.CalculateCurrentSpeedValue(bytesRead, elapsedTime));
+                    this._logger.LogInformation("Avg. speed: {averageTransferSpeed} bytes/s",
+                        _averageCalculator.CalculateAverageSpeedValue());
                 }
             }
+        }
+        catch (SocketException _)
+        {
+            var endPoint = (IPEndPoint)this._server.LocalEndpoint;
+            this._logger.LogError("Provided port {port} is busy. Try another or repeat later...", endPoint.Port);
+            throw;
         }
         finally
         {
             _server.Stop();
             this._logger.LogInformation("Listener server stopped");
-
         }
     }
 }
