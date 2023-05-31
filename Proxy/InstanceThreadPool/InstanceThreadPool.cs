@@ -60,9 +60,9 @@ public sealed class InstanceThreadPool : IInstanceThreadPool, IDisposable
         _actionsQueue.Enqueue(workItemGrain);
         _actionExecuteEvent.Set();
 
-        void WrappedAction(object o, CancellationToken _)
+        void WrappedAction(object actionParameter, CancellationToken _)
         {
-            action(o);
+            action(actionParameter);
         }
     }
 

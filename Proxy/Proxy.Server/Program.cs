@@ -1,8 +1,8 @@
 ﻿var threadPool = new InstanceThreadPool.InstanceThreadPool(3);
 
-var tks = new CancellationTokenSource();
-var tkn = tks.Token;
-tkn.Register(() => { Console.WriteLine("was canceled"); });
+var cancellationTokenSource = new CancellationTokenSource();
+var token = cancellationTokenSource.Token;
+token.Register(() => { Console.WriteLine("was canceled"); });
 
 
 try
@@ -29,9 +29,9 @@ Task MyCancelableAction(CancellationToken cancellationToken)
     }
 }
 
-threadPool.QueueExecute(async (cancellationToken) => await MyCancelableAction(cancellationToken), tkn);
+threadPool.QueueExecute(async (cancellationToken) => await MyCancelableAction(cancellationToken), token);
 
 
 Console.ReadLine();
-tks.Cancel();
+cancellationTokenSource.Cancel();
 Console.ReadLine();

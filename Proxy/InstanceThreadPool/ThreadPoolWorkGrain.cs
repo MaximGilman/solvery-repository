@@ -9,10 +9,10 @@ internal class ThreadPoolWorkGrain
         this._cancellationToken = cancellationToken;
     }
 
-    internal void Deconstruct(out object parameter, out Action<object, CancellationToken> funcDelegate, out CancellationToken cancellationToken)
+    internal void Deconstruct(out object parameter, out Action<object, CancellationToken> action, out CancellationToken cancellationToken)
     {
         parameter = _parameter;
-        funcDelegate = _action;
+        action = _action;
         cancellationToken = _cancellationToken;
     }
 

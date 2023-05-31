@@ -23,17 +23,17 @@ public interface IInstanceThreadPool
     /// <summary>
     /// Выполнить действие без параметров с возможностью отмены.
     /// </summary>
-    /// <param name="funcDelegate">Действие для выполнения.</param>
+    /// <param name="action">Действие для выполнения.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <exception cref="Exception">При возникновении исключения во время выполнения действия.</exception>
-    public void QueueExecute(Action<CancellationToken> funcDelegate, CancellationToken cancellationToken);
+    public void QueueExecute(Action<CancellationToken> action, CancellationToken cancellationToken);
 
     /// <summary>
     /// Выполнить действие с параметром с возможностью отмены.
     /// </summary>
     /// <param name="parameter">Параметр для действия.</param>
-    /// <param name="funcDelegate">Действие для выполнения.</param>
+    /// <param name="action">Действие для выполнения.</param>
     /// <param name="cancellationToken">Токен отмены.</param>
     /// <exception cref="Exception">При возникновении исключения во время выполнения действия.</exception>
-    public void QueueExecute(object parameter, Action<object, CancellationToken> funcDelegate, CancellationToken cancellationToken);
+    public void QueueExecute(object parameter, Action<object, CancellationToken> action, CancellationToken cancellationToken);
 }

@@ -9,11 +9,11 @@ public class InstanceThreadPoolSynchronizationContext : SynchronizationContext
         _threadPool = threadPool;
     }
 
-    public override void Post(SendOrPostCallback d, object state)
+    public override void Post(SendOrPostCallback callback, object state)
     {
-        void Action(object o, CancellationToken cancellationToken)
+        void Action(object parameter, CancellationToken cancellationToken)
         {
-            d.Invoke(state);
+            callback.Invoke(state);
         }
 
         _threadPool.QueueExecute(state, Action, CancellationToken.None);
