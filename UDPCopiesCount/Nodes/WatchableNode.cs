@@ -15,8 +15,7 @@ internal sealed class WatchableNode
         _logger = logFactory.GetCurrentClassLogger();
         _id = id;
 
-        Guard.IsLessOrEqual(port, 9999);
-        Guard.IsGreater(port, 0);
+        Guard.IsInInterval(port, 0, 9999);
         _port = port;
         _aliveMessage = $"Instance {_id} is alive";
 
