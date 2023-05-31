@@ -50,11 +50,11 @@
         /// Проверить, что значение меньше или равно.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsLess<T>(T first, T second) where T : IComparable
+        public static void IsLess<T>(T value, T maxValue) where T : IComparable
         {
-            if (first?.CompareTo(second) >= 0 || Comparer<T>.Default.Compare(first, second) >= 0)
+            if (value?.CompareTo(maxValue) >= 0 || Comparer<T>.Default.Compare(value, maxValue) >= 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше указанного значения  {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше указанного значения  {maxValue}", nameof(value));
             }
         }
 
@@ -62,24 +62,50 @@
         /// Проверить, что значение меньше.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
+        public static void IsLessOrEqual<T>(T value, T maxValue) where T : IComparable
         {
-            if (first?.CompareTo(second) > 0 || Comparer<T>.Default.Compare(first, second) > 0)
+            if (value?.CompareTo(maxValue) > 0 || Comparer<T>.Default.Compare(value, maxValue) > 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше или равно указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше или равно указанного значения {maxValue}", nameof(value));
             }
+        }
+
+        /// <summary>
+        /// Проверить, что значение входит в интервал.
+        /// </summary>
+        /// <param name="value">Сравниваемое значение.</param>
+        /// <param name="leftBoundary">Минимальная граница диапазона.</param>
+        /// <param name="rightBoundary">Максимальная граница диапазона.</param>
+        /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsInInterval<T>(T value, T leftBoundary, T rightBoundary) where T : IComparable
+        {
+            IsGreater(value, leftBoundary);
+            IsLess(value, rightBoundary);
+        }
+
+        /// <summary>
+        /// Проверить, что значение входит в интервал.
+        /// </summary>
+        /// <param name="value">Сравниваемое значение.</param>
+        /// <param name="leftBoundary">Минимальная граница диапазона.</param>
+        /// <param name="rightBoundary">Максимальная граница диапазона.</param>
+        /// /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
+        public static void IsInIntervalOrEqual<T>(T value, T leftBoundary, T rightBoundary) where T : IComparable
+        {
+            IsGreaterOrEqual(value, leftBoundary);
+            IsLessOrEqual(value, rightBoundary);
         }
 
         /// <summary>
         /// Проверить, что значение строго больше.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsGreater<T>(T first, T second) where T : IComparable
+        public static void IsGreater<T>(T value, T minValue) where T : IComparable
         {
-            if (first?.CompareTo(second) <= 0 || Comparer<T>.Default.Compare(first, second) <= 0)
+            if (value?.CompareTo(minValue) <= 0 || Comparer<T>.Default.Compare(value, minValue) <= 0)
 
             {
-                throw new ArgumentException($"Значение должно быть больше указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше указанного значения {minValue}", nameof(value));
             }
         }
 
@@ -87,11 +113,11 @@
         /// Проверить, что значение больше или равно.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsGreaterOrEqual<T>(T first, T second) where T : IComparable
+        public static void IsGreaterOrEqual<T>(T value, T minValue) where T : IComparable
         {
-            if (first?.CompareTo(second) < 0 || Comparer<T>.Default.Compare(first, second) < 0)
+            if (value?.CompareTo(minValue) < 0 || Comparer<T>.Default.Compare(value, minValue) < 0)
             {
-                throw new ArgumentException($"Значение должно быть больше или равно указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше или равно указанного значения {minValue}", nameof(value));
             }
         }
     }
