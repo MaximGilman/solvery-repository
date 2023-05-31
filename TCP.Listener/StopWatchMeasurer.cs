@@ -1,12 +1,9 @@
 ﻿using System.Diagnostics;
 using TCP.Listener.Task_1._TcpListener.Models;
-
 namespace TCP.Listener;
-
 
 public class StopWatchMeasurer
 {
-    private readonly AverageCalculator _averageCalculator = new();
     private readonly Stopwatch _stopwatch = new();
 
     public async Task<TimerActionResult<TResult>> MeasureAsync<TResult>(Func<ValueTask<TResult>> action)
