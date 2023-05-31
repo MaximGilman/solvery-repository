@@ -11,11 +11,11 @@ internal static class Program
     public static async Task Main()
     {
         var node = ConfigureAndCreateNode();
-        var ctn = CancellationToken.None;
+        var cancellationToken = CancellationToken.None;
         await Task.WhenAll(
-            Task.Run(async () => await node.StartReceiveStatusAsync(ctn), ctn),
-            Task.Run(async () => await node.StartSendingStatusAsync(ctn), ctn),
-            Task.Run(async () => await node.StartUpdateIsAlive(ctn), ctn));
+            Task.Run(async () => await node.StartReceiveStatusAsync(cancellationToken), cancellationToken),
+            Task.Run(async () => await node.StartSendingStatusAsync(cancellationToken), cancellationToken),
+            Task.Run(async () => await node.StartUpdateIsAlive(cancellationToken), cancellationToken));
 
     }
 
