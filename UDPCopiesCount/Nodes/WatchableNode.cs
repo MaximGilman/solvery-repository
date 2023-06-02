@@ -43,7 +43,6 @@ internal sealed class WatchableNode
         {
             Memory<byte> data = Encoding.UTF8.GetBytes(this._aliveMessage).AsMemory();
             UdpGuard.IsNoMaxDataSizeExceeded(data.Length);
-
             var ipEndPoint = new IPEndPoint(IPAddress.Broadcast, this._port);
             using var sender = new UdpClient();
             while (!cancellationToken.IsCancellationRequested)

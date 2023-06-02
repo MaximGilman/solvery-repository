@@ -21,13 +21,28 @@
         }
 
         /// <summary>
+        /// Проверить, что два значения равны.
+        /// </summary>
+        /// <typeparam name="T">Тип значения.</typeparam>
+        /// <param name="expectedValue">Текущее значение.</param>
+        /// <param name="valueToCompare">Значение для сравнения.</param>
+        public static void IsEqual<T>(T expectedValue, T valueToCompare)
+        {
+            if (expectedValue?.Equals(valueToCompare) != true ||
+                Comparer<T>.Default.Compare(expectedValue, valueToCompare) != 0)
+            {
+                throw new ArgumentException($" {expectedValue} должно быть равно {valueToCompare}");
+            }
+        }
+
+        /// <summary>
         /// Проверить, что значение не равно значению по-умолчанию.
         /// </summary>
         /// <typeparam name="T">Тип значения.</typeparam>
         /// <param name="expectedValue">Текущее значение.</param>
         public static void IsNotDefault<T>(T expectedValue)
         {
-            if (expectedValue?.Equals(default(T)) == true)
+            if (expectedValue == null || expectedValue.Equals(default(T)))
             {
                 throw new ArgumentException($" {expectedValue} Не должно быть равно значению по умолчанию",
                     nameof(expectedValue));
