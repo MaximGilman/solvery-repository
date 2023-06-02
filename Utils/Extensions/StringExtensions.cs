@@ -16,14 +16,20 @@ public static class StringExtensions
     public static string CropUpToLength(this string str, int length)
         => str.Length >= length ? str[..length] : str;
 
-    private const string GUID_REGEX = @"(?i)[{(]?[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}[)}]?";
 
-    public static Guid SubstringGuid(this string str)
+    /// <summary>
+    /// Достать из строки первый GUID, являющийся подстрокой.
+    /// </summary>
+    /// <param name="str">входная строка.</param>
+    /// <returns>GUID из строки.</returns>
+    /// <exception cref="ArgumentException">Если GUID'ов не обнаружено.</exception>
+    public static Guid SubstringGuidFromWords(this string str)
     {
-        var match = Regex.Match(str, GUID_REGEX);
-
-        Guard.IsMatch(match.Value, GUID_REGEX);
-        return Guid.Parse(match.Value);
-
+        var stringGuid = str.Split().FirstOrDefault(x => Guid.TryParse(x, out _));
+        if (stringGuid != default)
+        {
+            return Guid.Parse(stringGuid);
+        }
+        throw new ArgumentException($" {str} должно соответстовать GUID или его строковому представлению");
     }
 }
