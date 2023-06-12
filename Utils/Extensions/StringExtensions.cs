@@ -1,7 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using Utils.Guards;
-
-namespace Utils.Extensions;
+﻿namespace Utils.Extensions;
 
 /// <summary>
 /// Расширения для строк.
