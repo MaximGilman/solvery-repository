@@ -59,7 +59,7 @@ Thread StartDropThread(int timeOut, ThreadSafeQueue.ThreadSafeQueue targetQueue)
 
 IEnumerable<QueueWorker> CreateWorkers(int numberOfWorkers, ThreadSafeQueue.ThreadSafeQueue targetQueue)
 {
-    return Enumerable.Range(0, numberOfWorkers).Select(x => new QueueWorker(targetQueue)).ToList();
+    return Enumerable.Range(0, numberOfWorkers).Select(_ => new QueueWorker(targetQueue)).ToList();
 }
 
 #endregion

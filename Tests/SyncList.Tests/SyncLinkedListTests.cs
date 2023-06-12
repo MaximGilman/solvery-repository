@@ -81,6 +81,8 @@ public class SyncLinkedListTests
         });
 
         "Когда добавляются элементы".x(() =>
+        {
+            exception = Record.Exception(() =>
             {
                 exception = Record.Exception(() =>
                 {
@@ -93,9 +95,9 @@ public class SyncLinkedListTests
                             addThread.Start();
                         }
                     }
-                });
-            }
-        );
+                }
+            });
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов должно быть равно количеству операция добавления".x(() =>
@@ -193,6 +195,8 @@ public class SyncLinkedListTests
         });
 
         "Когда выводятся элементы".x(() =>
+        {
+            exception = Record.Exception(() =>
             {
                 exception = Record.Exception(() =>
                 {
@@ -208,9 +212,9 @@ public class SyncLinkedListTests
                             addThread.Start();
                         }
                     }
-                });
-            }
-        );
+                }
+            });
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов не должно измениться".x(() => _syncStringList.Count.Should().Be(0));

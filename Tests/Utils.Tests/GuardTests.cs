@@ -19,7 +19,9 @@ public class GuardTests
     public void IsNotEqual_Success<T>(T left, T right, Exception? exception)
     {
         "Когда сравниваем два элемента".x(() =>
-            exception = Record.Exception(() => Guard.IsNotEqual(left, right)));
+        {
+            exception = Record.Exception(() => Guard.IsNotEqual(left, right));
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
     }
@@ -34,7 +36,9 @@ public class GuardTests
     public void IsNotEqual_Error<T>(T left, T right, Exception? exception)
     {
         "Когда сравниваем два элемента".x(() =>
-            exception = Record.Exception(() => Guard.IsNotEqual(right, left))); // L и R поменяны местами!
+        {
+            exception = Record.Exception(() => Guard.IsNotEqual(right, left));
+        }); // L и R поменяны местами!
 
         "Возникает ошибка".x(() => exception.Should().BeOfType<ArgumentException>());
     }
@@ -51,7 +55,9 @@ public class GuardTests
     public void IsGreater_Success(int left, int right, Type type, Exception? exception)
     {
         "Когда сравниваем два элемента".x(() =>
-            exception = Record.Exception(() => Guard.IsGreater(left, right)));
+        {
+            exception = Record.Exception(() => Guard.IsGreater(left, right));
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
     }
@@ -66,7 +72,9 @@ public class GuardTests
     public void IsGreater_Error(int left, int right, Type type, Exception? exception)
     {
         "Когда сравниваем два элемента".x(() =>
-            exception = Record.Exception(() => Guard.IsGreater(right, left))); // L и R поменяны местами!
+        {
+            exception = Record.Exception(() => Guard.IsGreater(right, left));
+        }); // L и R поменяны местами!
 
         "Возникает ошибка".x(() => exception.Should().BeOfType<ArgumentException>());
     }
