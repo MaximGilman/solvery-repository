@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using TCP.Listener.Task_1._TcpListener.Models;
+using Utils.Guards;
+
 namespace TCP.Listener;
 
 public class StopWatchMeasurer
@@ -8,6 +10,8 @@ public class StopWatchMeasurer
 
     public async Task<TimerActionResult<TResult>> MeasureAsync<TResult>(Func<ValueTask<TResult>> action)
     {
+        Guard.IsNotDefault(action);
+
         _stopwatch.Start();
         var actionResult = await action();
         _stopwatch.Stop();
@@ -22,6 +26,8 @@ public class StopWatchMeasurer
 
     public TimerActionResult<TResult> Measure<TResult>(Func<TResult> action)
     {
+        Guard.IsNotDefault(action);
+
         _stopwatch.Start();
         var actionResult = action();
         _stopwatch.Stop();

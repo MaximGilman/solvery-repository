@@ -1,22 +1,36 @@
-﻿namespace TCP.Listener;
+﻿using Utils.Guards;
 
-public class AverageCalculator
+namespace TCP.Listener;
+
+public record AverageCalculator
 {
-    private TimeSpan _totalTimeElapsed = TimeSpan.Zero;
-    private int _totalBytesTransferred = 0;
+    public TimeSpan TotalTimeElapsed { private set; get; } = TimeSpan.Zero;
+    public int TotalBytesTransferred { private set; get; } = 0;
 
-    public double CalculateAverageSpeedValue() => _totalBytesTransferred / _totalTimeElapsed.TotalSeconds;
+    public double CalculateAverageSpeedValue()
+    {
+        Guard.IsGreater(TotalTimeElapsed, TimeSpan.Zero);
+        Guard.IsGreaterZero(TotalTimeElapsed.TotalSeconds);
+        return TotalBytesTransferred / TotalTimeElapsed.TotalSeconds;
+    }
 
-    public static double CalculateCurrentSpeedValue(int iterationBytesReadAmount, TimeSpan iterationElapsedTime) =>
-        iterationBytesReadAmount / iterationElapsedTime.TotalSeconds;
+    public static double CalculateCurrentSpeedValue(int iterationBytesReadAmount, TimeSpan iterationElapsedTime)
+    {
+        Guard.IsGreater(iterationElapsedTime, TimeSpan.Zero);
+        Guard.IsGreaterZero(iterationElapsedTime.TotalSeconds);
+
+        return iterationBytesReadAmount / iterationElapsedTime.TotalSeconds;
+    }
 
     public void AppendTotalTime(TimeSpan iterationElapsedTime)
     {
-        _totalTimeElapsed += iterationElapsedTime;
+        Guard.IsGreater(iterationElapsedTime, TimeSpan.Zero);
+        TotalTimeElapsed += iterationElapsedTime;
     }
 
     public void AppendTotalTransferredBytesAmount(int iterationBytesReadAmount)
     {
-        _totalBytesTransferred += iterationBytesReadAmount;
+        Guard.IsGreaterZero(iterationBytesReadAmount);
+        TotalBytesTransferred += iterationBytesReadAmount;
     }
 }

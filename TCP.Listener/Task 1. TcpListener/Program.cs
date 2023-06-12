@@ -6,8 +6,7 @@ var loggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
 try
 {
     var server = new MyTcpListener(loggerFactory.CreateLogger<MyTcpListener>(), 8080);
-    await server.Execute(CancellationToken.None);
-
+    await server.ExecuteAsync(CancellationToken.None);
 }
 catch (Exception ex)
 {
