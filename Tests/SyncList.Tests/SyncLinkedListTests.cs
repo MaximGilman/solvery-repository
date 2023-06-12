@@ -95,7 +95,7 @@ public class SyncLinkedListTests
                             addThread.Start();
                         }
                     }
-                }
+                });
             });
         });
 
@@ -212,7 +212,7 @@ public class SyncLinkedListTests
                             addThread.Start();
                         }
                     }
-                }
+                });
             });
         });
 
