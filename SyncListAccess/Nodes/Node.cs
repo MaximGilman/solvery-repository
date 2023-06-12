@@ -1,4 +1,4 @@
-﻿namespace SyncListAccess;
+﻿namespace SyncListAccess.Nodes;
 
 public abstract class Node<T>: IComparable<Node<T>>
 {

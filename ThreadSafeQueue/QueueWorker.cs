@@ -45,7 +45,7 @@ internal class QueueWorker
     }
 
     #endregion
-    
+
     #region Методы
 
     internal void HandleWrite(IEnumerable<string> messages)

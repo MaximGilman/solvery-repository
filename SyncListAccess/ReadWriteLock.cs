@@ -1,10 +1,8 @@
-﻿using System.Net;
-
-namespace SyncListAccess;
+﻿namespace SyncListAccess;
 
 public sealed class ReadWriteLock
 {
-    private int _readerCount = 0;
+    private int _readerCount;
     private bool _isWriterInLock = false;
 
     /// <summary>

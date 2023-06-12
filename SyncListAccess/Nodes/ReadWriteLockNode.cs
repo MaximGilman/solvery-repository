@@ -1,4 +1,4 @@
-﻿namespace SyncListAccess;
+﻿namespace SyncListAccess.Nodes;
 
 public class ReadWriteLockNode<T> : Node<T>
 {

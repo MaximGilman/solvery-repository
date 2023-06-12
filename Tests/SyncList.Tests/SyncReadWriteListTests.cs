@@ -22,7 +22,10 @@ public class SyncReadWriteListTests
     [Background]
     public void InitCollection()
     {
-        "Дана коллекция".x(() => _syncRwStringList = new SyncRwLinkedList<string>());
+        "Дана коллекция".x(() =>
+        {
+            _syncRwStringList = new SyncRwLinkedList<string>();
+        });
     }
 
 
@@ -47,6 +50,7 @@ public class SyncReadWriteListTests
         });
 
         "Когда добавляются элементы".x(() =>
+        {
             exception = Record.Exception(() =>
             {
                 for (var repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
@@ -59,7 +63,8 @@ public class SyncReadWriteListTests
                     }
                 }
                 Thread.Sleep(1000);
-            }));
+            });
+        });
 
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
@@ -100,9 +105,13 @@ public class SyncReadWriteListTests
             rawItems.ForEach(x => _syncRwStringList.Add(x));
         });
 
-        "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
+        "Инициализирована коллекция для возвращаемых строк".x(() =>
+        {
+            expectedResults = new string[repeatCount];
+        });
 
         "Когда выводятся элементы".x(() =>
+        {
             exception = Record.Exception(() =>
             {
                 for (var repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
@@ -117,7 +126,8 @@ public class SyncReadWriteListTests
                         addThread.Start();
                     }
                 }
-            }));
+            });
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов не должно измениться".x(() => _syncRwStringList.Count.Should().Be(itemsCount));
@@ -131,7 +141,6 @@ public class SyncReadWriteListTests
     /// <summary>
     /// Чтение записей из нескольких потоков
     /// </summary>
-    /// <param name="itemsCount">Изначальное количество элементов в списке.</param>
     /// <param name="repeatCount">Количество повторений.</param>
     /// <param name="threadCount">Количество потоков.</param>
     /// <param name="exception">Контейнер для исключений.</param>
@@ -150,9 +159,13 @@ public class SyncReadWriteListTests
             Guard.IsGreater(threadCount, 0);
         });
 
-        "Инициализирована коллекция для возвращаемых строк".x(() => expectedResults = new string[repeatCount]);
+        "Инициализирована коллекция для возвращаемых строк".x(() =>
+        {
+            expectedResults = new string[repeatCount];
+        });
 
         "Когда выводятся элементы".x(() =>
+        {
             exception = Record.Exception(() =>
             {
                 for (var repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
@@ -167,7 +180,8 @@ public class SyncReadWriteListTests
                         addThread.Start();
                     }
                 }
-            }));
+            });
+        });
 
         "Никаких ошибок не возникает".x(() => exception.Should().BeNull());
         "Количество элементов не должно измениться".x(() => _syncRwStringList.Count.Should().Be(0));

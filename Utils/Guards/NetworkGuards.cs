@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace Utils.Guards;
+﻿namespace Utils.Guards;
 
 public partial class Guard
 {
@@ -12,7 +10,7 @@ public partial class Guard
     /// <param name="port">Текущее значение.</param>
     public static void IsValidClientPort(int port)
     {
-        Guard.IsGreater(port, MIN_PORT);
-        Guard.IsLess(port, MAX_PORT);
+        IsGreater(port, MIN_PORT);
+        IsLess(port, MAX_PORT);
     }
 }
