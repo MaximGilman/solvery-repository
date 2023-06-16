@@ -5,15 +5,15 @@ using Utils.Constants;
 
 namespace TCP.Listener.Task_2._File_sender;
 
-internal class TCP_Client
+internal class FileSenderTcpClient
 {
     private ILogger _logger { get; }
 
     private IPEndPoint _endPoint { get; set; }
 
-    public TCP_Client(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
+    public FileSenderTcpClient(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
     {
-        this._logger = loggerFactory.CreateLogger<TCP_Client>();
+        this._logger = loggerFactory.CreateLogger<FileSenderTcpClient>();
         _endPoint = new IPEndPoint(targetAddress, targetPort);
     }
 
@@ -29,7 +29,7 @@ internal class TCP_Client
             await using var fileStream = File.OpenRead(fileName);
             // Наверное, стоит отловить переполнение при инициализации буффера?
             var fileBuffer = new byte[fileStream.Length].AsMemory();
-            await fileStream.ReadAsync(fileBuffer, cancellationToken);
+            var readedBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
             await networkStream.WriteAsync(fileBuffer, cancellationToken);
         }
         catch (SocketException ex)

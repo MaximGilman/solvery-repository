@@ -4,8 +4,11 @@ using TCP.Listener.Task_2._File_sender;
 
 var loggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
 
-var server = new TCP_Server(loggerFactory, 13000);
-var client = new TCP_Client(IPAddress.Loopback, 13000, loggerFactory);
+var serverPort = 13000;
+var clientPort = 13000;
+
+var server = new FileSenderTcpServer(loggerFactory, serverPort);
+var client = new FileSenderTcpClient(IPAddress.Loopback, clientPort, loggerFactory);
 
 await Task.WhenAll(
     Task.Run(async () => await server.HandleReceiveFile("Сюда.txt", CancellationToken.None), CancellationToken.None),
