@@ -3,21 +3,21 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Utils.Constants;
 
-namespace TCP.Listener.Task_2._File_sender;
+namespace TCP.Task2.Client;
 
-internal class FileSenderTcpClient
+public class Client
 {
     private ILogger _logger { get; }
 
     private IPEndPoint _endPoint { get; set; }
 
-    public FileSenderTcpClient(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
+    public Client(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
     {
-        this._logger = loggerFactory.CreateLogger<FileSenderTcpClient>();
+        this._logger = loggerFactory.CreateLogger<Client>();
         _endPoint = new IPEndPoint(targetAddress, targetPort);
     }
 
-    internal async Task HandleSendingFile(string fileName, CancellationToken cancellationToken)
+    public async Task HandleSendingFile(string fileName, CancellationToken cancellationToken)
     {
         var client = new TcpClient();
 
@@ -30,6 +30,8 @@ internal class FileSenderTcpClient
             // Наверное, стоит отловить переполнение при инициализации буффера?
             var fileBuffer = new byte[fileStream.Length].AsMemory();
             var readedBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
+            // Размер файла может не быть!
+            // Надо есть по кускам!
             await networkStream.WriteAsync(fileBuffer, cancellationToken);
         }
         catch (SocketException ex)

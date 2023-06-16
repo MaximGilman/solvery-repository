@@ -2,14 +2,13 @@
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
-using TCP.Listener.Task_2._File_sender.Utils;
-using TCP.Listener.Utils;
+using TCP.Utils;
 using Utils.Constants;
 using Utils.Guards;
 
-namespace TCP.Listener.Task_2._File_sender;
+namespace TCP.Task2.Listener;
 
-internal class FileSenderTcpServer
+public class Listener
 {
     private ILogger _logger { get; }
     private TcpListener _server { get; }
@@ -17,9 +16,13 @@ internal class FileSenderTcpServer
     private const int BYTE_BUFFER_SIZE = 1024;
     private readonly ArrayPool<byte> _arrayPool;
 
-    internal FileSenderTcpServer(ILoggerFactory loggerFactory, int? port = null)
+    public Listener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
-        this._logger = loggerFactory.CreateLogger<FileSenderTcpServer>();
+    }
+
+    public Listener(ILoggerFactory loggerFactory, int? port)
+    {
+        this._logger = loggerFactory.CreateLogger<Listener>();
 
         if (port.HasValue)
         {
@@ -33,7 +36,7 @@ internal class FileSenderTcpServer
         _server = TcpListener.Create(port ?? TcpConstants.USE_ANY_FREE_PORT_KEY);
     }
 
-    internal async Task HandleReceiveFile(string fileNameTarget, CancellationToken cancellationToken)
+    public async Task HandleReceiveFile(string fileNameTarget, CancellationToken cancellationToken)
     {
         try
         {
@@ -57,11 +60,17 @@ internal class FileSenderTcpServer
 
                 Guard.IsNotDefault(fileStream);
                 var tasks = new List<Task>();
-                while (await stream.ReadAsync(memoryBuffer, cancellationToken) != 0)
+
+                while (true)
                 {
+                    var readBytesAmount = await stream.ReadAsync(memoryBuffer, cancellationToken);
+                    if (readBytesAmount == 0)
+                    {
+                        break;
+                    }
                     this._logger.LogInformation("Received segment");
 
-                    tasks.Add(Task.Run( async() =>
+                    tasks.Add(Task.Run(async () =>
                     {
                         // ReSharper disable once AccessToDisposedClosure
                         await fileStream.WriteAsync(memoryBuffer, cancellationToken);

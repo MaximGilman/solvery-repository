@@ -1,6 +1,6 @@
 ﻿using System.Net.NetworkInformation;
 
-namespace TCP.Listener.Utils;
+namespace TCP.Utils;
 
 public static class TcpPortUtils
 {

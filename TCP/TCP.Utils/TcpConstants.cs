@@ -1,4 +1,4 @@
-﻿namespace TCP.Listener.Task_2._File_sender.Utils;
+﻿namespace TCP.Utils;
 
 public static class TcpConstants
 {
