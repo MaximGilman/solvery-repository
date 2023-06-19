@@ -38,21 +38,22 @@ public class Client
                 this._logger.LogError("Can't open file to read");
                 return;
             }
-            var bytes = _arrayPool.Rent(BYTE_BUFFER_SIZE);
-            var fileBuffer = bytes.AsMemory();
+
             await using (fileStream)
             {
                 while (true)
                 {
+                    var bytes = _arrayPool.Rent(BYTE_BUFFER_SIZE);
+                    var fileBuffer = bytes.AsMemory();
                     var readBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
                     if (readBytes == 0)
                     {
                         break;
                     }
                     await networkStream.WriteAsync(fileBuffer, cancellationToken);
+                    _arrayPool.Return(bytes, true);
 
                 }
-                _arrayPool.Return(bytes, true);
 
                 this._logger.LogInformation("Sent all segments");
             }
