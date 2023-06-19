@@ -26,7 +26,7 @@ public class Listener
 
         if (port.HasValue)
         {
-            // Guard.IsValidClientPort(port.Value);
+            Guard.IsValidClientPort(port.Value);
         }
         else
         {
@@ -53,33 +53,39 @@ public class Listener
                 this._logger.LogInformation("Tcp client connected");
 
                 var stream = client.GetStream();
-
                 var bytes = _arrayPool.Rent(BYTE_BUFFER_SIZE);
                 var memoryBuffer = bytes.AsMemory();
-                await using var fileStream = File.OpenWrite(fileNameTarget);
 
-                Guard.IsNotDefault(fileStream);
-                var tasks = new List<Task>();
-
-                while (true)
+                if (!FileHandler.TryOpenWriteFile(fileNameTarget, out var fileStream))
                 {
-                    var readBytesAmount = await stream.ReadAsync(memoryBuffer, cancellationToken);
-                    if (readBytesAmount == 0)
-                    {
-                        break;
-                    }
-                    this._logger.LogInformation("Received segment");
-
-                    tasks.Add(Task.Run(async () =>
-                    {
-                        // ReSharper disable once AccessToDisposedClosure
-                        await fileStream.WriteAsync(memoryBuffer, cancellationToken);
-                    }, cancellationToken));
+                    this._logger.LogError("Can't open file to write");
+                    return;
                 }
-                await Task.WhenAll(tasks);
-                this._logger.LogInformation("Received all segments");
-                _arrayPool.Return(bytes, true);
-                break;
+
+                await using (fileStream)
+                {
+                    var tasks = new List<Task>();
+                    this._logger.LogInformation("Start receiving segments");
+
+                    while (true)
+                    {
+                        var readBytesAmount = await stream.ReadAsync(memoryBuffer, cancellationToken);
+                        if (readBytesAmount == 0)
+                        {
+                            break;
+                        }
+
+                        tasks.Add(Task.Run(async () =>
+                        {
+                            // ReSharper disable once AccessToDisposedClosure
+                            await fileStream.WriteAsync(memoryBuffer, cancellationToken);
+                        }, cancellationToken));
+                    }
+                    await Task.WhenAll(tasks);
+                    this._logger.LogInformation("Received all segments");
+                    _arrayPool.Return(bytes, true);
+                    break;
+                }
             }
         }
         catch (SocketException ex)

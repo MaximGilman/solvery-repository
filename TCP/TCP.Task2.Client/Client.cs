@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using TCP.Utils;
 using Utils.Constants;
 
 namespace TCP.Task2.Client;
@@ -10,6 +11,8 @@ public class Client
     private ILogger _logger { get; }
 
     private IPEndPoint _endPoint { get; set; }
+
+    private const int BYTE_BUFFER_SIZE = 1024;
 
     public Client(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
     {
@@ -26,13 +29,30 @@ public class Client
             await client.ConnectAsync(_endPoint, cancellationToken);
             _logger.LogInformation("Connection succeeded");
             await using var networkStream = client.GetStream();
-            await using var fileStream = File.OpenRead(fileName);
-            // Наверное, стоит отловить переполнение при инициализации буффера?
-            var fileBuffer = new byte[fileStream.Length].AsMemory();
-            var readedBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
-            // Размер файла может не быть!
-            // Надо есть по кускам!
-            await networkStream.WriteAsync(fileBuffer, cancellationToken);
+
+            if (!FileHandler.TryOpenReadFile(fileName, out var fileStream))
+            {
+                this._logger.LogError("Can't open file to read");
+                return;
+            }
+
+            var fileBuffer = new byte[BYTE_BUFFER_SIZE].AsMemory();
+            var tasks = new List<Task>();
+            await using (fileStream)
+            {
+                while (true)
+                {
+                    var readBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
+                    if (readBytes == 0)
+                    {
+                        break;
+                    }
+                    await networkStream.WriteAsync(fileBuffer, cancellationToken);
+
+                }
+                await Task.WhenAll(tasks);
+                this._logger.LogInformation("Sent all segments");
+            }
         }
         catch (SocketException ex)
         {
