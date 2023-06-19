@@ -6,6 +6,7 @@ public static class FileHandler
 {
     public static bool TryOpenWriteFile(string filePath, out FileStream fileStream)
     {
+        Guard.IsCorrectPath(filePath);
         return TryOpenFile(filePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None, out fileStream);
     }
 

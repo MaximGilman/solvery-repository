@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Buffers;
+using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using TCP.Utils;
@@ -13,11 +14,13 @@ public class Client
     private IPEndPoint _endPoint { get; set; }
 
     private const int BYTE_BUFFER_SIZE = 1024;
+    private readonly ArrayPool<byte> _arrayPool;
 
     public Client(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
     {
         this._logger = loggerFactory.CreateLogger<Client>();
         _endPoint = new IPEndPoint(targetAddress, targetPort);
+        _arrayPool = ArrayPool<byte>.Create();
     }
 
     public async Task HandleSendingFile(string fileName, CancellationToken cancellationToken)
@@ -35,9 +38,8 @@ public class Client
                 this._logger.LogError("Can't open file to read");
                 return;
             }
-
-            var fileBuffer = new byte[BYTE_BUFFER_SIZE].AsMemory();
-            var tasks = new List<Task>();
+            var bytes = _arrayPool.Rent(BYTE_BUFFER_SIZE);
+            var fileBuffer = bytes.AsMemory();
             await using (fileStream)
             {
                 while (true)
@@ -50,7 +52,8 @@ public class Client
                     await networkStream.WriteAsync(fileBuffer, cancellationToken);
 
                 }
-                await Task.WhenAll(tasks);
+                _arrayPool.Return(bytes, true);
+
                 this._logger.LogInformation("Sent all segments");
             }
         }

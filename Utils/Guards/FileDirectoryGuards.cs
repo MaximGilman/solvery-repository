@@ -31,7 +31,11 @@ public static partial class Guard
         }
     }
 
-    private static bool IsCorrectPath(string path)
+    /// <summary>
+    /// Является ли путь корректным.
+    /// </summary>
+    /// <param name="path">Путь до файла.</param>
+    public static bool IsCorrectPath(string path)
     {
         try
         {
