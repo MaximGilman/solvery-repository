@@ -61,7 +61,7 @@ public class Client
                     }
                     finally
                     {
-                        _arrayPool.Return(bytes);
+                        _arrayPool.Return(bytes, true);
                     }
                 }
 

@@ -5,6 +5,22 @@
     /// </summary>
     public static partial class Guard
     {
+
+        /// <summary>
+        /// Проверить, что два значения равны.
+        /// </summary>
+        /// <typeparam name="T">Тип значения.</typeparam>
+        /// <param name="expectedValue">Текущее значение.</param>
+        /// <param name="valueToCompare">Значение для сравнения.</param>
+        public static void IsEqual<T>(T expectedValue, T valueToCompare)
+        {
+            if (expectedValue?.Equals(valueToCompare) != true &&
+                Comparer<T>.Default.Compare(expectedValue, valueToCompare) != 0)
+            {
+                throw new ArgumentException($" {expectedValue} должно быть равно {valueToCompare}");
+            }
+        }
+
         /// <summary>
         /// Проверить, что два значения не равны.
         /// </summary>

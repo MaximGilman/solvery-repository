@@ -16,6 +16,7 @@ public class Listener
 
     private const int BYTE_BUFFER_SIZE = 4096 * 8;
     private readonly ArrayPool<byte> _arrayPool;
+    private readonly ITcpListenerAsynchronizer _asynchronizer;
     private int _totalTransferredBytes = 0;
     public Listener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
@@ -38,6 +39,8 @@ public class Listener
         _arrayPool = ArrayPool<byte>.Create();
         _server = TcpListener.Create(port ?? TcpConstants.USE_ANY_FREE_PORT_KEY);
         _exceptionHandler = new TcpExceptionHandler(_logger);
+
+        _asynchronizer = new BaseTcpListenerAsynchronizer();
     }
 
     public async Task HandleReceiveFile(string fileNameTarget, CancellationToken cancellationToken)
@@ -46,30 +49,30 @@ public class Listener
         {
             this._server.Start();
             var ipEndpoint = (IPEndPoint)this._server.LocalEndpoint;
-            this._logger.LogInformation("Listener start listening on {address}:{port}", ipEndpoint.Address,
-                ipEndpoint.Port);
+            //this.logger.LogInformation("Listener start listening on {address}:{port}", ipEndpoint.Address,
+               // ipEndpoint.Port);
 
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                this._logger.LogInformation("Listener waiting for a connection...");
+                //this.logger.LogInformation("Listener waiting for a connection...");
 
                 using var client = await _server.AcceptTcpClientAsync(cancellationToken);
-                this._logger.LogInformation("Tcp client connected");
+                //this.logger.LogInformation("Tcp client connected");
 
                 var stream = client.GetStream();
 
 
                 if (!FileHandler.TryOpenWriteFile(fileNameTarget, out var fileStream))
                 {
-                    this._logger.LogError("Can't open file to write");
+                    //this.logger.LogError("Can't open file to write");
                     return;
                 }
 
                 await using (fileStream)
                 {
-                    var tasks = new List<Task>();
-                    this._logger.LogInformation("Start receiving segments");
+                    await _asynchronizer.Init();
+                    //this.logger.LogInformation("Start receiving segments");
 
                     while (true)
                     {
@@ -84,19 +87,20 @@ public class Listener
 
                             // Keep for fix AccessToDisposedClosure
                             var localStream = fileStream;
-                            tasks.Add(Task.Run(async () =>
+                            await _asynchronizer.QueueWork(async () =>
                             {
-                                await localStream.WriteAsync(bytes, 0, readBytesAmount, cancellationToken);
+                                await localStream.WriteAsync(bytes, cancellationToken);
                                 _totalTransferredBytes = Interlocked.Add(ref _totalTransferredBytes, readBytesAmount);
-                            }, cancellationToken));
+                            }, cancellationToken);
                         }
                         finally
 
                         {
-                            _arrayPool.Return(bytes);
+                            _arrayPool.Return(bytes, true);
                         }
 
-                        await Task.WhenAll(tasks);
+                        await _asynchronizer.GetResult();
+                        //this.logger.LogInformation("Received segments");
                     }
 
                     break;
@@ -112,7 +116,7 @@ public class Listener
         finally
         {
             _server.Stop();
-            this._logger.LogInformation("Listener server stopped");
+            //this.logger.LogInformation("Listener server stopped");
         }
     }
 }
