@@ -14,6 +14,7 @@ public class Client
 
     private const int BYTE_BUFFER_SIZE = 1024;
     private readonly ArrayPool<byte> _arrayPool;
+    private int _totalTransferredBytes = 0;
 
     public Client(IPAddress targetAddress, int targetPort, ILoggerFactory loggerFactory)
     {
@@ -47,15 +48,16 @@ public class Client
 
                     try
                     {
-                        var fileBuffer = bytes.AsMemory();
-                        var readBytes = await fileStream.ReadAsync(fileBuffer, cancellationToken);
+                        var readBytes = await fileStream.ReadAsync(bytes, cancellationToken);
                         if (readBytes == 0)
                         {
                             break;
                         }
 
                         // offset count!!!!
-                        await networkStream.WriteAsync(fileBuffer, cancellationToken);
+                        await networkStream.WriteAsync(bytes, 0, readBytes, cancellationToken);
+                        _totalTransferredBytes = Interlocked.Add(ref _totalTransferredBytes, readBytes);
+
                     }
                     finally
                     {
@@ -63,7 +65,7 @@ public class Client
                     }
                 }
 
-                this._logger.LogInformation("Sent all segments");
+                this._logger.LogInformation($"Sent all segments. Total bytes: {_totalTransferredBytes}");
             }
         }
         catch (Exception ex)

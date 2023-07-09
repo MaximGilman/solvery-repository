@@ -14,9 +14,9 @@ public class Listener
     private readonly TcpExceptionHandler _exceptionHandler;
     private TcpListener _server { get; }
 
-    private const int BYTE_BUFFER_SIZE = 1024;
+    private const int BYTE_BUFFER_SIZE = 4096 * 8;
     private readonly ArrayPool<byte> _arrayPool;
-
+    private int _totalTransferredBytes = 0;
     public Listener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
     }
@@ -76,8 +76,7 @@ public class Listener
                         var bytes = _arrayPool.Rent(BYTE_BUFFER_SIZE);
                         try
                         {
-                            var memoryBuffer = bytes.AsMemory();
-                            var readBytesAmount = await stream.ReadAsync(memoryBuffer, cancellationToken);
+                            var readBytesAmount = await stream.ReadAsync(bytes, cancellationToken);
                             if (readBytesAmount == 0)
                             {
                                 break;
@@ -87,7 +86,8 @@ public class Listener
                             var localStream = fileStream;
                             tasks.Add(Task.Run(async () =>
                             {
-                                await localStream.WriteAsync(memoryBuffer, cancellationToken);
+                                await localStream.WriteAsync(bytes, 0, readBytesAmount, cancellationToken);
+                                _totalTransferredBytes = Interlocked.Add(ref _totalTransferredBytes, readBytesAmount);
                             }, cancellationToken));
                         }
                         finally
@@ -97,12 +97,13 @@ public class Listener
                         }
 
                         await Task.WhenAll(tasks);
-                        this._logger.LogInformation("Received all segments");
                     }
 
                     break;
                 }
             }
+            this._logger.LogInformation($"Received all segments. Total bytes: {_totalTransferredBytes}");
+
         }
         catch (Exception ex)
         {
