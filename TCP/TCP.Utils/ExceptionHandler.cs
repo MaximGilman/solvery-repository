@@ -14,7 +14,7 @@ public  class TcpExceptionHandler
 
     public  void HandleException(Exception exception)
     {
-        DoHandleException((SocketException)(dynamic)exception);
+        DoHandleException((dynamic)exception);
     }
 
     private void DoHandleException(SocketException exception)
