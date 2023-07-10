@@ -54,7 +54,6 @@ public class Client
                             break;
                         }
 
-                        // offset count!!!!
                         await networkStream.WriteAsync(bytes, 0, readBytes, cancellationToken);
                         _totalTransferredBytes = Interlocked.Add(ref _totalTransferredBytes, readBytes);
 
