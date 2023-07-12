@@ -17,6 +17,7 @@ public class DataFlowTcpListener : ITcpListener
 
     private readonly ArrayPool<byte> _arrayPool;
     private int _totalTransferredBytes = 0;
+    private readonly Stopwatch _watcher;
 
     public DataFlowTcpListener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
@@ -39,6 +40,7 @@ public class DataFlowTcpListener : ITcpListener
         _arrayPool = ArrayPool<byte>.Create();
         _server = TcpListener.Create(port ?? TcpConstants.USE_ANY_FREE_PORT_KEY);
         _exceptionHandler = new TcpExceptionHandler(_logger);
+        _watcher = new Stopwatch();
     }
 
     public async Task HandleReceiveFile(string fileNameTarget, CancellationToken cancellationToken)
@@ -77,7 +79,7 @@ public class DataFlowTcpListener : ITcpListener
                     // networkTransferBlock.LinkTo(fileActionBlock, new DataflowLinkOptions { PropagateCompletion = true });
 
                     this._logger.LogInformation("Start receiving segments");
-
+                    _watcher.Restart();
                     while (true)
                     {
                         // Первый вариант, описанный выше в комментариях
@@ -95,10 +97,13 @@ public class DataFlowTcpListener : ITcpListener
                             if (readBytesAmount == 0)
                             {
                                 fileActionBlock.Complete();
-                                this._logger.LogInformation($"Received all segments. Total bytes: {_totalTransferredBytes}");
+                                _watcher.Stop();
+                                this._logger.LogInformation(
+                                    $"Received all segments. Total bytes: {_totalTransferredBytes}. Total time: {_watcher.Elapsed}");
 
                                 return;
                             }
+
                             await fileActionBlock.SendAsync(bytes, cancellationToken);
                         }
                         catch

@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
@@ -15,6 +16,7 @@ public class PipelineTcpListener : ITcpListener
     private TcpListener _server { get; }
 
     private int _totalTransferredBytes = 0;
+    private readonly Stopwatch _watcher;
 
     public PipelineTcpListener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
@@ -36,6 +38,7 @@ public class PipelineTcpListener : ITcpListener
 
         _server = TcpListener.Create(port ?? TcpConstants.USE_ANY_FREE_PORT_KEY);
         _exceptionHandler = new TcpExceptionHandler(_logger);
+        _watcher = new Stopwatch();
     }
 
 
@@ -68,17 +71,18 @@ public class PipelineTcpListener : ITcpListener
                 await using (fileStream)
                 {
                     this._logger.LogInformation("Start receiving segments");
-
+                    _watcher.Restart();
 
                     var pipe = new Pipe();
                     var writing = FillPipeAsync(stream, pipe.Writer, cancellationToken);
                     var reading = ReadPipeAsync(fileStream, pipe.Reader, cancellationToken);
                     await Task.WhenAll(reading, writing);
                 }
-                this._logger.LogInformation($"Received all segments. Total bytes: {_totalTransferredBytes}");
 
+                _watcher.Stop();
+                this._logger.LogInformation(
+                    $"Received all segments. Total bytes: {_totalTransferredBytes}. Total time: {_watcher.Elapsed}");
             }
-
         }
         catch (Exception ex)
         {

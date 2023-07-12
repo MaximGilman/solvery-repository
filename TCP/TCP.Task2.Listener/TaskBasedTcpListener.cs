@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,7 @@ public class TaskBasedTcpListener : ITcpListener
 
     private readonly ArrayPool<byte> _arrayPool;
     private int _totalTransferredBytes = 0;
-
+    private readonly Stopwatch _watcher;
     public TaskBasedTcpListener(ILoggerFactory loggerFactory) : this(loggerFactory, null)
     {
     }
@@ -37,6 +38,7 @@ public class TaskBasedTcpListener : ITcpListener
         _arrayPool = ArrayPool<byte>.Create();
         _server = TcpListener.Create(port ?? TcpConstants.USE_ANY_FREE_PORT_KEY);
         _exceptionHandler = new TcpExceptionHandler(_logger);
+        _watcher = new Stopwatch();
     }
 
     public async Task HandleReceiveFile(string fileNameTarget, CancellationToken cancellationToken)
@@ -69,7 +71,7 @@ public class TaskBasedTcpListener : ITcpListener
                 {
                     var tasks = new List<Task>();
                     this._logger.LogInformation("Start receiving segments");
-
+                    _watcher.Restart();
                     while (true)
                     {
                         var bytes = _arrayPool.Rent(ITcpListener.BYTE_BUFFER_SIZE);
@@ -102,7 +104,8 @@ public class TaskBasedTcpListener : ITcpListener
                 }
             }
 
-            this._logger.LogInformation($"Received all segments. Total bytes: {_totalTransferredBytes}");
+            _watcher.Stop();
+            this._logger.LogInformation($"Received all segments. Total bytes: {_totalTransferredBytes}. Total time: {_watcher.Elapsed}");
         }
         catch (Exception ex)
         {
