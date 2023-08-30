@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
@@ -17,12 +18,11 @@ public class ReliableUdpSender : IDisposable
 
     private readonly AutoResetEvent _canSend = new(true);
 
-    // private readonly List<Task> _tasks = new List<Task>();
     private int _currentSequenceNumber;
     private int _baseSequenceNumber;
 
 
-    private readonly Dictionary<int, Memory<byte>> _packetsOnFly = new();
+    private readonly ConcurrentDictionary<int, Memory<byte>> _packetsOnFly = new();
 
     public ReliableUdpSender(IPAddress remoteIp, int remotePort, ILogger<ReliableUdpSender> logger)
     {
@@ -117,7 +117,7 @@ public class ReliableUdpSender : IDisposable
 
             if (!isRetry)
             {
-                _currentSequenceNumber++;
+                Interlocked.Increment(ref _currentSequenceNumber);
             }
         }
     }
@@ -177,10 +177,10 @@ public class ReliableUdpSender : IDisposable
     private void HandleAcknowledgementSuccess(int sequenceNumber)
     {
         _logger.LogInformation("{Message}", $"Packet {sequenceNumber} acknowledged.");
-        _packetsOnFly.Remove(sequenceNumber);
+        _packetsOnFly.TryRemove(sequenceNumber, out _);
 
         // Нужно так же придумать логику, как двигать seqNumber
-        _baseSequenceNumber++;
+        Interlocked.Increment(ref _baseSequenceNumber);
 
         if (IsCurrentWindowCanSend())
         {
