@@ -30,7 +30,8 @@ public class NewVersionOfUdpSender
     private const int MAX_ON_FLY_WINDOW_SIZE = 2;
 
     private readonly ILogger<NewVersionOfUdpSender> _logger;
-    private readonly UdpClient _udpClient;
+    private readonly UdpClient _udpClientSend;
+    private readonly UdpClient _udpClientReceive;
 
     private readonly ConcurrentQueue<int> _blockIdsOnFly = new();
     private readonly ConcurrentDictionary<int, Memory<byte>> _blockBodiesOnFly = new();
@@ -40,12 +41,19 @@ public class NewVersionOfUdpSender
     private int _currentBlockId;
 
     public NewVersionOfUdpSender(IPAddress remoteIp, int remotePort, ILogger<NewVersionOfUdpSender> logger)
+        : this(remoteIp, remotePort, remotePort, logger)
+    {
+    }
+
+    public NewVersionOfUdpSender(IPAddress remoteIp, int remotePortSend, int remotePortReceive, ILogger<NewVersionOfUdpSender> logger)
     {
         // Захватить порт указанный пользователем или любой другой. как в TCP
         _logger = logger;
-        _udpClient = new UdpClient();
-        var remoteEndPoint = new IPEndPoint(remoteIp, remotePort);
-        _udpClient.Connect(remoteEndPoint);
+        _udpClientSend = new UdpClient(remotePortSend);
+        _udpClientSend.Connect(new IPEndPoint(remoteIp, remotePortSend));
+
+        _udpClientReceive = new UdpClient(remotePortReceive);
+        _udpClientReceive.Connect(new IPEndPoint(remoteIp, remotePortReceive));
     }
 
     public async Task SendAsync(Stream fileStream, CancellationToken cancellationToken)
@@ -64,6 +72,7 @@ public class NewVersionOfUdpSender
                     {
                         break;
                     }
+
 
                     _tasks.Add(Task.Run(async () => await SendBlockAsync(_currentBlockId, bytes, cancellationToken), cancellationToken));
                     _tasks.Add(Task.Run(async () => await AcknowledgeBlockAsync(cancellationToken), cancellationToken));
@@ -100,7 +109,7 @@ public class NewVersionOfUdpSender
     {
         try
         {
-            await _udpClient.SendAsync(blockData, cancellationToken);
+            await _udpClientSend.SendAsync(blockData, cancellationToken);
             _logger.LogInformation("Block: {blockId} was sent to network", blockId);
         }
         catch (SocketException)
@@ -115,12 +124,13 @@ public class NewVersionOfUdpSender
 
     private async Task AcknowledgeBlockAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Start waiting acknowledgement messages on {port}", ((IPEndPoint)_udpClientReceive.Client.LocalEndPoint)!.Port);
+
         while (true)
         {
             // Таймаут по выходу?
-            _logger.LogInformation("Wait acknowledgement from receiver...");
 
-            var result = await _udpClient.ReceiveAsync(cancellationToken);
+            var result = await _udpClientReceive.ReceiveAsync(cancellationToken);
             var receivedInts = ExtractInts(result.Buffer);
 
             _logger.LogInformation("Received some blockIds that were sent");
@@ -171,7 +181,7 @@ public class NewVersionOfUdpSender
     /// </summary>
     private static HashSet<int> ExtractInts(Memory<byte> receivedAcknowledgeData)
     {
-        var innerSize = receivedAcknowledgeData.Length / sizeof (int);
+        var innerSize = receivedAcknowledgeData.Length / sizeof(int);
 
         var innerInts = new int[innerSize];
         for (var index = 0; index < innerSize; index++)
@@ -179,7 +189,7 @@ public class NewVersionOfUdpSender
             var startOfCurrentInt = index * sizeof(int);
             var endOfCurrentInt = startOfCurrentInt + sizeof(int);
 
-            innerInts[index] =  BitConverter.ToInt32(receivedAcknowledgeData[startOfCurrentInt..endOfCurrentInt].Span);
+            innerInts[index] = BitConverter.ToInt32(receivedAcknowledgeData[startOfCurrentInt..endOfCurrentInt].Span);
         }
 
         return innerInts.ToHashSet();
@@ -192,12 +202,10 @@ public class NewVersionOfUdpSender
     private static Memory<byte> AddSequenceNumberToData(int blockId, Memory<byte> data)
     {
         var resultMemory = new byte[sizeof(int) + data.Length];
-        var blockIdBytes= BitConverter.GetBytes(blockId);
+        var blockIdBytes = BitConverter.GetBytes(blockId);
         var dataArray = data.ToArray();
         Buffer.BlockCopy(blockIdBytes, 0, resultMemory, 0, blockIdBytes.Length);
         Buffer.BlockCopy(dataArray, 0, resultMemory, blockIdBytes.Length, dataArray.Length);
         return resultMemory;
-
-        throw new SystemException("Error concatenating packet data and its sequence number");
     }
 }

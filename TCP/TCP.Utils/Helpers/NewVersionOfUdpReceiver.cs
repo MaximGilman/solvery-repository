@@ -30,27 +30,29 @@ public class NewVersionOfUdpReceiver
     private readonly ILogger<NewVersionOfUdpReceiver> _logger;
     private bool _isReceivedAll;
     private readonly List<Task> _tasks = new();
+    private readonly int _portSend;
 
-    public NewVersionOfUdpReceiver(int port, ILogger<NewVersionOfUdpReceiver> logger)
+    public NewVersionOfUdpReceiver(int portReceive, int portSend, ILogger<NewVersionOfUdpReceiver> logger)
     {
-        _udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, port));
+        _udpClient = new UdpClient( portReceive);
+        _portSend = portSend;
         _logger = logger;
     }
 
     public async Task HandleAllReceiveAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Start handling requests...");
+        _logger.LogInformation("Start handling requests on {port}...", (((IPEndPoint)_udpClient.Client.LocalEndPoint)!).Port);
 
         _tasks.Add(Task.Run(async () => await this.SendAcknowledgementAsync(cancellationToken), cancellationToken));
 
         while (!_isReceivedAll)
         {
             var result = await _udpClient.ReceiveAsync(cancellationToken);
-            _tasks.Add(Task.Run(async () => await HandleBlockAsync(result.Buffer, cancellationToken), cancellationToken));
+            _tasks.Add(Task.Run(() => HandleBlockAsync(result.Buffer), cancellationToken));
         }
     }
 
-    private async Task HandleBlockAsync(Memory<byte> data, CancellationToken cancellationToken)
+    private void HandleBlockAsync(Memory<byte> data)
     {
         var blockId = BitConverter.ToInt32(data[..sizeof(int)].Span);
         if (blockId == -1)
@@ -64,22 +66,43 @@ public class NewVersionOfUdpReceiver
             // Обработать wasAdded
             var wasAdded = this._receivedBlocks.TryAdd(blockId, blockData);
             _logger.LogInformation("Received block with id:{blockId}", blockId);
-
         }
     }
 
     private async Task SendAcknowledgementAsync(CancellationToken cancellationToken)
     {
+        var isConnected = false;
         while (!_isReceivedAll)
         {
-            await Task.Delay(_acknowledgmentDelay);
-            // Можно придумать условие, по которому отправлять не все ключи, а только некоторые
-            var receivedKeysAsByteArray = this.GetReceivedKeysData();
-            await _udpClient.SendAsync(receivedKeysAsByteArray, cancellationToken);
-            _logger.LogInformation("Acknowledge for blocks was sent");
+            try
+            {
+                await Task.Delay(_acknowledgmentDelay);
+
+                if (!isConnected)
+                {
+                    _udpClient.Connect(new IPEndPoint(IPAddress.Any, 60382));
+                }
+                if (NeedSendAcknowledgement())
+                {
+                    // Можно придумать условие, по которому отправлять не все ключи, а только некоторые
+                    var receivedKeysAsByteArray = this.GetReceivedKeysData();
+                    await _udpClient.SendAsync(receivedKeysAsByteArray, new IPEndPoint(IPAddress.Broadcast, _portSend), cancellationToken);
+                    _logger.LogInformation("Acknowledge for blocks was sent to adress:{port}", _portSend);
+                }
+
+                isConnected = true;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("Acknowledge sending finished with error. {error}", exception.Message);
+                isConnected = false;
+            }
         }
     }
 
+    private bool NeedSendAcknowledgement() => this._receivedBlocks.Any() && IsNewDataReceived();
+
+    private bool IsNewDataReceived() => true;
     private Memory<byte> GetReceivedKeysData()
     {
         var keys = _receivedBlocks.Keys.ToArray();
