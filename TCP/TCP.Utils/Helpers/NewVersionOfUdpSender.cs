@@ -54,11 +54,14 @@ public class NewVersionOfUdpSender
         _udpClientSend.Connect(new IPEndPoint(remoteIp, remotePortSend));
 
         _udpClientReceive = new UdpClient(remotePortReceive);
-        _udpClientReceive.Connect(new IPEndPoint(remoteIp, remotePortReceive));
+        // _udpClientReceive.Connect(new IPEndPoint(remoteIp, remotePortReceive));
     }
 
     public async Task SendAsync(Stream fileStream, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Start waiting acknowledgement messages on {port}", ((IPEndPoint)_udpClientReceive.Client.LocalEndPoint)!.Port);
+        _tasks.Add(Task.Run(async () => await AcknowledgeBlockAsync(cancellationToken), cancellationToken));
+
         await using (fileStream)
         {
             while (true)
@@ -67,16 +70,17 @@ public class NewVersionOfUdpSender
                 var bytes = _arrayPool.Rent(ReliableUdpConstants.BYTE_BUFFER_SIZE);
                 try
                 {
+                    // Оставляем в начале блока данных место под номер блока.
                     var readBytes = await fileStream.ReadAsync(bytes, sizeof(int), ReliableUdpConstants.BYTE_BUFFER_DATA_SIZE, cancellationToken);
 
                     if (readBytes == 0)
                     {
+                        _logger.LogInformation("All blocks were read from IO. Waiting for sending & acknowledgment");
+
                         break;
                     }
 
-
                     _tasks.Add(Task.Run(async () => await SendBlockAsync(_currentBlockId, bytes, cancellationToken), cancellationToken));
-                    _tasks.Add(Task.Run(async () => await AcknowledgeBlockAsync(cancellationToken), cancellationToken));
                 }
                 catch
                 {
@@ -137,8 +141,6 @@ public class NewVersionOfUdpSender
 
     private async Task AcknowledgeBlockAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Start waiting acknowledgement messages on {port}", ((IPEndPoint)_udpClientReceive.Client.LocalEndPoint)!.Port);
-
         while (true)
         {
             try
@@ -193,7 +195,7 @@ public class NewVersionOfUdpSender
             receivedInts.Remove(blockId);
         }
     }
-    
+
     /// <summary>
     /// Проверить, получено ли сообщение от получателя.
     /// </summary>
