@@ -28,7 +28,8 @@ public class NewVersionOfUdpSender
     //      возвращяем ключ в очередь
 
     private const int MAX_ON_FLY_WINDOW_SIZE = 2;
-
+    private const int ACKNOWLEDGMENT_SECONDS_DELAY = 2;
+    private readonly TimeSpan _acknowledgmentDelay = TimeSpan.FromSeconds(ACKNOWLEDGMENT_SECONDS_DELAY);
     private readonly ILogger<NewVersionOfUdpSender> _logger;
     private readonly UdpClient _udpClientSend;
     private readonly UdpClient _udpClientReceive;
@@ -92,16 +93,28 @@ public class NewVersionOfUdpSender
         Interlocked.Increment(ref _currentBlockId);
         this._blockIdsOnFly.Enqueue(blockId);
         var blockDataWithBlockId = AddSequenceNumberToData(blockId, blockData);
-        _logger.LogInformation("Added block {blockId} to onFly status", blockId);
-
-        // Обработать как -то wasAdded
         var wasAdded = this._blockBodiesOnFly.TryAdd(blockId, blockDataWithBlockId);
+
+        if (wasAdded)
+        {
+            _logger.LogInformation("Added block {blockId} to onFly status", blockId);
+        }
 
         if (this._blockIdsOnFly.Count >= MAX_ON_FLY_WINDOW_SIZE)
         {
             this._windowOnFlyIsFull.Reset();
         }
 
+        await SendNetworkBlockAsync(blockId, blockDataWithBlockId, cancellationToken);
+    }
+
+    private async Task ReSendBlockAsync(int blockId, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Block with id: {blockId} wasn't acknowledged", blockId);
+
+        this._blockIdsOnFly.Enqueue(blockId);
+        this._blockBodiesOnFly.TryGetValue(blockId, out var blockBody);
+        var blockDataWithBlockId = AddSequenceNumberToData(blockId, blockBody);
         await SendNetworkBlockAsync(blockId, blockDataWithBlockId, cancellationToken);
     }
 
@@ -128,46 +141,59 @@ public class NewVersionOfUdpSender
 
         while (true)
         {
-            // Таймаут по выходу?
-
-            var result = await _udpClientReceive.ReceiveAsync(cancellationToken);
-            var receivedInts = ExtractInts(result.Buffer);
-
-            _logger.LogInformation("Received some blockIds that were sent");
-
-            if (IsAllSend(receivedInts))
+            try
             {
-                _logger.LogInformation("All blocks were sent");
-                return;
+                var result = await _udpClientReceive.ReceiveAsync(cancellationToken).AsTask().WaitAsync(this._acknowledgmentDelay, cancellationToken);
+                var receivedInts = ExtractInts(result.Buffer);
+
+                _logger.LogInformation("Received some blockIds that were sent");
+
+                if (IsAllSend(receivedInts))
+                {
+                    _logger.LogInformation("All blocks were sent");
+                    return;
+                }
+
+                TryDequeueBlockAndHandleRetransmitting(receivedInts, cancellationToken);
             }
-
-            if (this._blockIdsOnFly.TryDequeue(out var blockId))
+            catch (TimeoutException)
             {
-                this._blockBodiesOnFly.TryGetValue(blockId, out var blockBody);
-
-                if (receivedInts.Contains(blockId))
+                if (this._blockIdsOnFly.TryDequeue(out var blockId))
                 {
-                    this._blockBodiesOnFly.Remove(blockId, out _);
-                    if (this._blockIdsOnFly.Count < MAX_ON_FLY_WINDOW_SIZE)
-                    {
-                        this._windowOnFlyIsFull.Set();
-                    }
-
-                    this._arrayPool.Return(blockBody.ToArray());
+                    _tasks.Add(this.ReSendBlockAsync(blockId, cancellationToken));
                 }
-                else
-                {
-                    _logger.LogInformation("Block with id: {blockId} wasn't acknowledged", blockId);
-
-                    this._blockIdsOnFly.Enqueue(blockId);
-                    _tasks.Add(this.SendBlockAsync(blockId, blockBody, cancellationToken));
-                }
-
-                receivedInts.Remove(blockId);
             }
         }
     }
 
+    private void TryDequeueBlockAndHandleRetransmitting(HashSet<int> receivedInts, CancellationToken cancellationToken)
+    {
+        if (this._blockIdsOnFly.TryDequeue(out var blockId))
+        {
+            this._blockBodiesOnFly.TryGetValue(blockId, out var blockBody);
+
+            if (receivedInts.Contains(blockId))
+            {
+                this._blockBodiesOnFly.Remove(blockId, out _);
+                if (this._blockIdsOnFly.Count < MAX_ON_FLY_WINDOW_SIZE)
+                {
+                    this._windowOnFlyIsFull.Set();
+                }
+
+                this._arrayPool.Return(blockBody.ToArray());
+            }
+            else
+            {
+                _logger.LogInformation("Block with id: {blockId} wasn't acknowledged", blockId);
+
+                this._blockIdsOnFly.Enqueue(blockId);
+                _tasks.Add(this.SendBlockAsync(blockId, blockBody, cancellationToken));
+            }
+
+            receivedInts.Remove(blockId);
+        }
+    }
+    
     /// <summary>
     /// Проверить, получено ли сообщение от получателя.
     /// </summary>
