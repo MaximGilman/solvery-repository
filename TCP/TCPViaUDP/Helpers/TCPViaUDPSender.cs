@@ -4,11 +4,10 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 
-namespace TCP.Utils.Helpers;
+namespace TCPViaUDP.Helpers;
 
 public class TCPViaUDPSender: IDisposable
 {
-
     private const int MAX_ON_FLY_WINDOW_SIZE = 2;
     private const int ACKNOWLEDGMENT_SECONDS_DELAY = 5;
     private readonly TimeSpan _acknowledgmentDelay = TimeSpan.FromSeconds(ACKNOWLEDGMENT_SECONDS_DELAY);

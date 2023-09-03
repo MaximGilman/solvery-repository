@@ -1,4 +1,4 @@
-﻿namespace TCP.Utils.Helpers.IOHandlers;
+﻿namespace TCPViaUDP.Helpers.IOHandlers;
 
 /// <summary>
 /// Обработчик файла для получателя.

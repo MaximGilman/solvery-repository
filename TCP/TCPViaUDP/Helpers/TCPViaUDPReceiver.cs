@@ -1,12 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.Metadata;
 using Microsoft.Extensions.Logging;
-using TCP.Utils.Helpers.BlockSelectors;
-using TCP.Utils.Helpers.IOHandlers;
+using TCP.Utils;
+using TCPViaUDP.Helpers.BlockSelectors;
+using TCPViaUDP.Helpers.IOHandlers;
 
-namespace TCP.Utils.Helpers;
+namespace TCPViaUDP.Helpers;
 
 public class TCPViaUDPReceiver : IDisposable
 {
@@ -30,7 +30,7 @@ public class TCPViaUDPReceiver : IDisposable
         _udpClient = new UdpClient(portReceive);
         _logger = logger;
 
-        _fileHandler = new GarbageFileHandler(new SequentialBlockSelector<Memory<byte>>(this.GetKeys, this.PrepareBlocksByKeysToSave));
+        _fileHandler = new GarbageFileHandler(new SequentialBlockSelector<int, Memory<byte>>(this.GetKeys, this.PrepareBlocksByKeysToSave));
     }
 
     public async Task HandleAllReceiveAsync(CancellationToken cancellationToken)

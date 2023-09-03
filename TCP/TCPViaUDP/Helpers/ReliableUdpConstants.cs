@@ -1,4 +1,4 @@
-﻿namespace TCP.Utils.Helpers;
+﻿namespace TCPViaUDP.Helpers;
 
 public static class ReliableUdpConstants
 {

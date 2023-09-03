@@ -1,17 +1,17 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Numerics;
 
-namespace TCP.Utils.Helpers.BlockSelectors;
+namespace TCPViaUDP.Helpers.BlockSelectors;
 
 /// <summary>
 /// Последовательный выбиратор блоков для сохранения.
 /// </summary>
-public class SequentialBlockSelector<TValue> : IBlockSelector<IEnumerable<TValue>>
+public class SequentialBlockSelector<TKey, TValue> : IBlockSelector<IEnumerable<TValue>> where TKey: INumberBase<TKey>
 {
-    private readonly Func<IEnumerable<int>> _getKeys;
-    private readonly Func<IEnumerable<int>, IEnumerable<TValue>> _getValues;
-    private int _currentBlockId = 0;
+    private readonly Func<IEnumerable<TKey>> _getKeys;
+    private readonly Func<IEnumerable<TKey>, IEnumerable<TValue>> _getValues;
+    private TKey _currentBlockId = TKey.Zero;
 
-    public SequentialBlockSelector(Func<IEnumerable<int>> getKeys, Func<IEnumerable<int>, IEnumerable<TValue>> getValues)
+    public SequentialBlockSelector(Func<IEnumerable<TKey>> getKeys, Func<IEnumerable<TKey>, IEnumerable<TValue>> getValues)
     {
         _getKeys = getKeys;
         _getValues = getValues;
@@ -24,12 +24,12 @@ public class SequentialBlockSelector<TValue> : IBlockSelector<IEnumerable<TValue
         return _getValues(keys);
     }
 
-    private IEnumerable<int> GetSequentialKeysUntilPossible()
+    private IEnumerable<TKey> GetSequentialKeysUntilPossible()
     {
         // Берем все ключи по порядку, пока берутся. Как только встречаем пробел в порядке ключей - останавливаемся.
         // 1, 2, 3, 4, 6, 7, 8 - возьмем 1 -4. Остальные пойдем загружать, когда появится 5й блок.
         var keys = _getKeys().ToList();
         return keys.SkipWhile(n => n != _currentBlockId)
-            .TakeWhile((n, i) => i == 0 || n == keys[keys.IndexOf(_currentBlockId) + i - 1] + 1);
+            .TakeWhile((n, i) => i == 0 || n == keys[keys.IndexOf(_currentBlockId) + i - 1] + TKey.One);
     }
 }

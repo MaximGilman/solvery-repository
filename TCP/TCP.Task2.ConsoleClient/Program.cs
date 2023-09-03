@@ -1,12 +1,11 @@
 ﻿using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using TCP.Utils.Helpers;
+using TCPViaUDP.Helpers;
 
 const int SERVER_PORT = 60381;
 const int SERVER_PORT_RECEIVE = 60382;
 var serverIpAddress = IPAddress.Loopback;
-// var serverIpAddress = IPAddress.Parse("192.168.0.15");
 var loggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
 var logger = loggerFactory.CreateLogger<TCPViaUDPSender>();
 var tcpViaUdpSender = new TCPViaUDPSender(serverIpAddress, SERVER_PORT, SERVER_PORT_RECEIVE, logger);

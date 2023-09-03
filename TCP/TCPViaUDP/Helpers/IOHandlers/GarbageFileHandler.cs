@@ -1,6 +1,6 @@
-﻿using TCP.Utils.Helpers.BlockSelectors;
+﻿using TCPViaUDP.Helpers.BlockSelectors;
 
-namespace TCP.Utils.Helpers.IOHandlers;
+namespace TCPViaUDP.Helpers.IOHandlers;
 
 /// <summary>
 /// Имитирует сохранение файла на диск. Просто выбрасывает блок данных.
