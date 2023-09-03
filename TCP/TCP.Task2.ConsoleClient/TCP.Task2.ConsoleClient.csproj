@@ -13,8 +13,9 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     </ItemGroup>
 
+
     <ItemGroup>
-      <ProjectReference Include="..\TCP.Task2.Client\TCP.Task2.Client.csproj" />
+      <ProjectReference Include="..\TCP.Utils\TCP.Utils.csproj" />
     </ItemGroup>
 
 </Project>
