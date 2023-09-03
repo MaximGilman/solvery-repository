@@ -2,35 +2,17 @@
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Win32;
 
 namespace TCP.Utils.Helpers;
 
-public class NewVersionOfUdpSender
+public class TCPViaUDPSender: IDisposable
 {
-    // Отправитель
-    // Дано. Очередь с ключами блоков и справочник с их телами. оба Concurent
-    //
-    //  while true
-    // Лочимся на максимальное количество пакетов onFly
-    // 1) в таске
-    // Пока из файла читается блок - берем его и загружаем на отправку.
-    // В очередь на ожидание добавляем ключ, в справочник тело буфера
-    // 2) в таске
-    // while true
-    // лочимся на ReceiveAsync от получателя (или ждем таймаут) - ждем там массив
-    // берем запись из очереди (deq)
-    //      если она есть в ReceiveAsync - удаляем ее из очереди и из справочника тел.
-    //
-    //      если нет - снова отправляем тело документа
-    //      возвращяем ключ в очередь
 
     private const int MAX_ON_FLY_WINDOW_SIZE = 2;
-    private const int ACKNOWLEDGMENT_SECONDS_DELAY = 2;
+    private const int ACKNOWLEDGMENT_SECONDS_DELAY = 5;
     private readonly TimeSpan _acknowledgmentDelay = TimeSpan.FromSeconds(ACKNOWLEDGMENT_SECONDS_DELAY);
-    private readonly ILogger<NewVersionOfUdpSender> _logger;
+    private readonly ILogger<TCPViaUDPSender> _logger;
     private readonly UdpClient _udpClientSend;
     private readonly UdpClient _udpClientReceive;
 
@@ -41,12 +23,12 @@ public class NewVersionOfUdpSender
     private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Create();
     private int _currentBlockId;
 
-    public NewVersionOfUdpSender(IPAddress remoteIp, int remotePort, ILogger<NewVersionOfUdpSender> logger)
+    public TCPViaUDPSender(IPAddress remoteIp, int remotePort, ILogger<TCPViaUDPSender> logger)
         : this(remoteIp, remotePort, remotePort, logger)
     {
     }
 
-    public NewVersionOfUdpSender(IPAddress remoteIp, int remotePortSend, int remotePortReceive, ILogger<NewVersionOfUdpSender> logger)
+    public TCPViaUDPSender(IPAddress remoteIp, int remotePortSend, int remotePortReceive, ILogger<TCPViaUDPSender> logger)
     {
         // Захватить порт указанный пользователем или любой другой. как в TCP
         _logger = logger;
@@ -54,7 +36,6 @@ public class NewVersionOfUdpSender
         _udpClientSend.Connect(new IPEndPoint(remoteIp, remotePortSend));
 
         _udpClientReceive = new UdpClient(remotePortReceive);
-        // _udpClientReceive.Connect(new IPEndPoint(remoteIp, remotePortReceive));
     }
 
     public async Task SendAsync(Stream fileStream, CancellationToken cancellationToken)
@@ -235,5 +216,16 @@ public class NewVersionOfUdpSender
         Buffer.BlockCopy(blockIdBytes, 0, resultMemory, 0, blockIdBytes.Length);
         Buffer.BlockCopy(dataArray, 0, resultMemory, blockIdBytes.Length, dataArray.Length);
         return resultMemory;
+    }
+
+    public void Dispose()
+    {
+        _udpClientSend?.Close();
+        _udpClientSend?.Dispose();
+
+        _udpClientReceive?.Close();
+        _udpClientReceive?.Dispose();
+
+        _windowOnFlyIsFull?.Dispose();
     }
 }
