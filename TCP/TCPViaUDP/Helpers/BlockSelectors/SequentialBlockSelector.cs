@@ -10,6 +10,7 @@ public class SequentialBlockSelector<TKey, TValue> : IBlockSelector<IEnumerable<
     private readonly Func<IEnumerable<TKey>> _getKeys;
     private readonly Func<IEnumerable<TKey>, IEnumerable<TValue>> _getValues;
     private TKey _currentBlockId = TKey.Zero;
+    //// Обсудить №4. Вероятно, есть лучшая стратегия сохранения на диск, чем последовательная. 
 
     public SequentialBlockSelector(Func<IEnumerable<TKey>> getKeys, Func<IEnumerable<TKey>, IEnumerable<TValue>> getValues)
     {

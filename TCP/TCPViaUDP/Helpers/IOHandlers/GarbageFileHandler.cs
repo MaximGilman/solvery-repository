@@ -7,6 +7,7 @@ namespace TCPViaUDP.Helpers.IOHandlers;
 /// </summary>
 public class GarbageFileHandler : IFileHandler
 {
+    // TODO: сделать реальную загрузку на диск.
     private readonly IBlockSelector<IEnumerable<Memory<byte>>> _blockSelector;
 
     public GarbageFileHandler(IBlockSelector<IEnumerable<Memory<byte>>> blockSelector)
