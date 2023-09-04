@@ -21,6 +21,7 @@ public class TCPViaUDPSender: IDisposable
     private readonly List<Task> _tasks = new();
     private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Create();
     private int _currentBlockId;
+    private object _lockObject = new();
 
     public TCPViaUDPSender(IPAddress remoteIp, int remotePort, ILogger<TCPViaUDPSender> logger)
         : this(remoteIp, remotePort, remotePort, logger)
@@ -29,7 +30,7 @@ public class TCPViaUDPSender: IDisposable
 
     public TCPViaUDPSender(IPAddress remoteIp, int remotePortSend, int remotePortReceive, ILogger<TCPViaUDPSender> logger)
     {
-        // Захватить порт указанный пользователем или любой другой. как в TCP
+        // TODO: Добавить вариант захвата какого-то свободного порта, как было сделано в TCP. Вынести как отдельный класс эту логику.
         _logger = logger;
         _udpClientSend = new UdpClient(remotePortSend);
         _udpClientSend.Connect(new IPEndPoint(remoteIp, remotePortSend));
@@ -46,6 +47,7 @@ public class TCPViaUDPSender: IDisposable
         {
             while (true)
             {
+                //// Обсудить №1. Просачивается больше потоков, чем указано в окне. Нужно изменить структуру блокировок.
                 _windowOnFlyIsFull.WaitOne();
                 var bytes = _arrayPool.Rent(ReliableUdpConstants.BYTE_BUFFER_SIZE);
                 try
@@ -84,10 +86,6 @@ public class TCPViaUDPSender: IDisposable
             _logger.LogInformation("Added block {blockId} to onFly status", blockId);
         }
 
-        if (this._blockIdsOnFly.Count >= MAX_ON_FLY_WINDOW_SIZE)
-        {
-            this._windowOnFlyIsFull.Reset();
-        }
 
         await SendNetworkBlockAsync(blockId, blockDataWithBlockId, cancellationToken);
     }

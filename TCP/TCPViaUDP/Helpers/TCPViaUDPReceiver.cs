@@ -76,7 +76,8 @@ public class TCPViaUDPReceiver : IDisposable
 
                 if (NeedSendAcknowledgement())
                 {
-                    // Можно придумать условие, по которому отправлять не все ключи, а только некоторые
+                    //// Обсудить №2.  Можно придумать условие, по которому отправлять не все ключи, а только последние.
+                    //// Как вариант в блоке данных хранить еще минимальный сохраненный номер блока. В таком случае, все блоки с ключем меньше этого можно не подтверждать.
                     var receivedKeysAsByteArray = this.GetReceivedKeysData();
                     await _udpClient.SendAsync(receivedKeysAsByteArray, this._targetSenderEndPoint, cancellationToken);
                     _logger.LogInformation("Acknowledge for blocks was sent to {address}:{port}", this._targetSenderEndPoint.Address,

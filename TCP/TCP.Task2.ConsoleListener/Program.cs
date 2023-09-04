@@ -2,9 +2,10 @@
 using TCPViaUDP.Helpers;
 
 var loggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
-const int PORT = 60381;
-
 var logger = loggerFactory.CreateLogger<TCPViaUDPReceiver>();
-var newVersionOfUdpReceiver = new TCPViaUDPReceiver(PORT, logger);
+
+const int PORT_RECEIVE = 60381;
+
+var newVersionOfUdpReceiver = new TCPViaUDPReceiver(PORT_RECEIVE, logger);
 
 await newVersionOfUdpReceiver.HandleAllReceiveAsync(CancellationToken.None);
