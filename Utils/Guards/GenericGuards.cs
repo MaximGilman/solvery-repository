@@ -51,6 +51,20 @@
         }
 
         /// <summary>
+        /// Проверить, что значение не равно значению null  .
+        /// </summary>
+        /// <typeparam name="T">Тип значения.</typeparam>
+        /// <param name="expectedValue">Текущее значение.</param>
+        public static void IsNotNull<T>(T expectedValue)
+        {
+            if (expectedValue == null)
+            {
+                throw new ArgumentException($" {expectedValue} Не должно быть равно null",
+                    nameof(expectedValue));
+            }
+        }
+
+        /// <summary>
         /// Проверить, что коллекция не пустая.
         /// </summary>
         /// <typeparam name="T">Тип элемента коллекции.</typeparam>
