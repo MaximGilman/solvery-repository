@@ -14,6 +14,7 @@ public static class LongKeyMemoryDataBlockTransformer
     public static Memory<byte> ToMemory(LongKeyMemoryByteDataBlock dataBlock)
     {
         Guard.IsNotDefault(dataBlock);
+        Guard.IsNotNull(dataBlock);
         Guard.IsNotDefault(dataBlock.BlockId);
         Guard.IsGreater(dataBlock.BlockId, 0);
         Guard.IsNotDefault(dataBlock.Data);
@@ -24,6 +25,7 @@ public static class LongKeyMemoryDataBlockTransformer
     public static LongKeyMemoryByteDataBlock ToBlock(Memory<byte> memory)
     {
         Guard.IsNotDefault(memory);
+        Guard.IsNotNull(memory);
         Guard.IsNotEmpty(memory);
         Guard.IsGreater(memory.Length, LONG_SIZE);
         var (blockId, blockData) = ExtractBlockIdAndData(memory);

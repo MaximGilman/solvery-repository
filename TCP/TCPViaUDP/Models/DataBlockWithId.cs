@@ -11,6 +11,7 @@ public record DataBlockWithId<TKey, TValue> : DataBlock<TValue> where TKey : INu
     {
         Guard.IsNotDefault(blockId);
         Guard.IsNotDefault(data);
+        Guard.IsNotNull(data);
 
         BlockId = blockId;
     }
@@ -19,6 +20,7 @@ public record DataBlockWithId<TKey, TValue> : DataBlock<TValue> where TKey : INu
     {
         Guard.IsNotDefault(blockId);
         Guard.IsNotDefault(dataBlock);
+        Guard.IsNotNull(dataBlock);
         Guard.IsNotDefault(dataBlock.Data);
         Guard.IsNotNull(dataBlock.Data);
 

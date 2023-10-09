@@ -33,4 +33,26 @@ public class DataBlockTests
             Assert.IsType<ArgumentException>(exception);
         });
     }
+
+    [Scenario]
+    public void NullValue_Error(DataBlock<int> dataBlock, Exception exception)
+    {
+        "Когда создается блок с null значением".x(() => { exception = Record.Exception(() => { new DataBlock<int>(null); }); });
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
+    }
+
+    [Scenario]
+    public void NullValue_WhenBlock_Error(DataBlock<int> dataBlock, Exception exception)
+    {
+        "Когда создается блок с null значением блока".x(() => { exception = Record.Exception(() => { new DataBlock<int>(null); }); });
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
+    }
 }

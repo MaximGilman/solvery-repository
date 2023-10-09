@@ -9,6 +9,7 @@ public record DataBlock<TValue>
     public DataBlock(TValue data)
     {
         Guard.IsNotDefault(data);
+        Guard.IsNotNull(data);
         Data = data;
     }
 
