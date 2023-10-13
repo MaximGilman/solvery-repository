@@ -8,14 +8,8 @@ namespace TCPviaUDP.Tests.Helpers.LongKeyMemoryDataBlockTransformer;
 
 public class LongKeyMemoryDataBlockTransformerTests
 {
-    // Пустые данные. Без ключа.
-    private Memory<byte> _emptyMemoryData;
-
-    // Пустой ключ. Без данных.
-    private Memory<byte> _emptyMemoryKey;
-
     // Блок с пустым ключем и данными.
-    private Memory<byte> _emptyMemoryDataWithEmptyId;
+    private Memory<byte> _emptyBlock;
 
     // Блок без ключа, но с данными.
     private Memory<byte> _memoryDataWithEmptyId;
@@ -71,9 +65,7 @@ public class LongKeyMemoryDataBlockTransformerTests
             _existedBlock = new Memory<byte>(correctPositionedBlock);
             _negativeExistedBlock = new Memory<byte>(_existedNegativeKeyBytes);
 
-            _emptyMemoryData = new();
-            _emptyMemoryKey = new Memory<byte>();
-            _emptyMemoryDataWithEmptyId = new();
+            _emptyBlock = new();
             _memoryDataWithEmptyId = _existedDataBytes.ToArray();
             _emptyMemoryDataWithId = new Memory<byte>(BitConverter.GetBytes(CORRECT_BLOCK_ID));
         });
@@ -84,13 +76,7 @@ public class LongKeyMemoryDataBlockTransformerTests
     [Scenario]
     public void ToMemory_Success(LongKeyMemoryByteDataBlock block, Exception exception)
     {
-        "Когда преобразуется в блок".x(() =>
-        {
-            exception = Record.Exception(() =>
-            {
-                block = ImplementationTransformer.ToBlock(_existedBlock);
-            });
-        });
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_existedBlock); }); });
 
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученный блок содержит нужные данные".x(() =>
@@ -105,47 +91,79 @@ public class LongKeyMemoryDataBlockTransformerTests
     }
 
     [Scenario]
-    public void ToMemory_EmptyKey()
+    public void ToMemory_EmptyBlock(LongKeyMemoryByteDataBlock block, Exception exception)
     {
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_emptyBlock); }); });
+
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
     }
 
     [Scenario]
-    public void ToMemory_EmptyData()
+    public void ToMemory_EmptyKey(LongKeyMemoryByteDataBlock block, Exception exception)
     {
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_memoryDataWithEmptyId); }); });
+
+        "Никаких ошибок не возникает".x(() => Assert.Null(exception));
+        "Полученный блок содержит неверные данные".x(() =>
+        {
+            Assert.NotEqual(CORRECT_BLOCK_ID, block.BlockId);
+            Assert.NotEqual(_errorPositionedBlock.Length, block.Data.Length);
+            Assert.NotEqual(_errorPositionedBlock, block.Data);
+        });
     }
 
     [Scenario]
-    public void ToMemory_EmptyBlock()
+    public void ToMemory_EmptyBody(LongKeyMemoryByteDataBlock block, Exception exception)
     {
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_emptyMemoryDataWithId); }); });
+
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
+    }
+
+    [Scenario]
+    public void ToMemory_ErrorPositionedBlock_LessThanLongType(LongKeyMemoryByteDataBlock block, Exception exception)
+    {
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_existedKeyBytes); }); });
+
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
     }
 
     [Scenario]
     public void ToMemory_ErrorPositionedBlock(LongKeyMemoryByteDataBlock block, Exception exception)
     {
-// длина большая из-за данных - их порезать
-        "Когда преобразуется в блок".x(() =>
-        {
-            exception = Record.Exception(() =>
-            {
-                block = ImplementationTransformer.ToBlock(_errorPositionedBlock);
-            });
-        });
+        "Когда преобразуется в блок".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_errorPositionedBlock); }); });
 
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученный блок содержит неверные данные".x(() =>
         {
-            Assert.Equal(CORRECT_BLOCK_ID, block.BlockId);
-            Assert.Equal(_existedDataBytes.Length, block.Data.Length);
-            foreach (var (exp, act) in _existedDataBytes.Zip(block.Data.ToArray()))
-            {
-                Assert.Equal(exp, act);
-            }
+            Assert.NotEqual(CORRECT_BLOCK_ID, block.BlockId);
+            Assert.NotEqual(_errorPositionedBlock.Length, block.Data.Length);
+            Assert.NotEqual(_errorPositionedBlock, block.Data);
         });
     }
 
     [Scenario]
-    public void ToMemory_NegativeKeyBlock()
+    public void ToMemory_NegativeKeyBlock(LongKeyMemoryByteDataBlock block, Exception exception)
     {
+        "Когда преобразуется в блок с отрицательным ключем".x(() => { exception = Record.Exception(() => { block = ImplementationTransformer.ToBlock(_negativeExistedBlock); }); });
+
+        "Возникает ошибка".x(() =>
+        {
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+        });
     }
 
     #endregion
@@ -157,13 +175,7 @@ public class LongKeyMemoryDataBlockTransformerTests
     {
         "Дан блок".x(() => block = new LongKeyMemoryByteDataBlock(CORRECT_BLOCK_ID, _existedDataBytes));
 
-        "Когда преобразуется в память".x(() =>
-        {
-            exception = Record.Exception(() =>
-            {
-                memory = ImplementationTransformer.ToMemory(block);
-            });
-        });
+        "Когда преобразуется в память".x(() => { exception = Record.Exception(() => { memory = ImplementationTransformer.ToMemory(block); }); });
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученная память нужного размера".x(() => Assert.Equal(memory.Length, LONG_SIZE + _existedDataBytes.Length));
     }
@@ -171,18 +183,13 @@ public class LongKeyMemoryDataBlockTransformerTests
     [Scenario]
     public void ToBlock_Null_Error(Exception exception)
     {
-        "Когда null преобразуется в память".x(() =>
-        {
-            exception = Record.Exception(() =>
-            {
-                 ImplementationTransformer.ToMemory(null);
-            });
-        });
+        "Когда null преобразуется в память".x(() => { exception = Record.Exception(() => { ImplementationTransformer.ToMemory(null); }); });
         "Возникает ошибка".x(() =>
         {
             Assert.NotNull(exception);
             Assert.IsType<ArgumentException>(exception);
         });
     }
+
     #endregion
 }
