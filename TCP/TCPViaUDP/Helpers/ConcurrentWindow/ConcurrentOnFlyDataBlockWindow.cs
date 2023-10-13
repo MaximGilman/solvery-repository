@@ -23,7 +23,6 @@ public class ConcurrentOnFlyDataBlockWindow<TKey, TValue> : IConcurrentOnFlyData
 
     public bool TryAddBlock(DataBlockWithId<TKey, TValue> blockWithId)
     {
-
         lock (_lock)
         {
             if (_blocksOnFly.Count >= _windowFrameSize)

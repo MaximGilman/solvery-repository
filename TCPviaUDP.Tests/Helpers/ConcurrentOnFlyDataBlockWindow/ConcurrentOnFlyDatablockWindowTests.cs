@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using TCPViaUDP.Helpers.ConcurrentWindow;
 using TCPViaUDP.Models;
 using Xbehave;
@@ -189,6 +190,41 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Когда удаляется не существующий элемент".x(() => _concurrentWindow.TryRemove(1));
         "Количество элементов не уменьшается".x(() => Assert.Equal(0, _concurrentWindow.GetCurrentCount()));
+    }
+
+    #endregion
+
+    #region ConcurrentTests
+
+    [Scenario]
+    public async Task TestConcurrentAccess(List<Task> tasks, int maxCount)
+    {
+        "Дан список задач".x(() => tasks = new List<Task>());
+        "Дано значение для подсчета количества элементов в окне".x(() => maxCount = 0);
+
+        "Когда запускаем несколько потоков на работу".x (() =>
+        {
+            for (int i = 1; i <= 1000; i++)
+            {
+                int id = i;
+                tasks.Add(Task.Run(() =>
+                {
+                    _concurrentWindow.TryAddBlock(new DataBlockWithId<int, int>(id, id));
+                    var value = _concurrentWindow.GetValueOrDefault(id);
+                    maxCount = Math.Max(maxCount, _concurrentWindow.GetCurrentCount());
+                    _concurrentWindow.TryRemove(id);
+                }));
+            }
+        });
+        "После окончания выполнения окно пустое".x(async () =>
+        {
+            await Task.WhenAll(tasks);
+            Assert.Equal(0, _concurrentWindow.GetCurrentCount());
+        });
+        "Размер окна не был превышен".x(() =>
+        {
+            Assert.True(maxCount <= _concurrentWindow.GetWindowFrameSize());
+        });
     }
 
     #endregion
