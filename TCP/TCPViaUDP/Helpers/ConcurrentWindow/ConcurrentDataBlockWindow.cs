@@ -8,20 +8,20 @@ namespace TCPViaUDP.Helpers.ConcurrentWindow;
 /// <summary>
 /// Скользящее окно блоков данных в обработке.
 /// </summary>
-public class ConcurrentOnFlyDataBlockWindow<TKey, TValue> : IConcurrentOnFlyDataBlockWindow<TKey, TValue> where TKey: INumber<TKey>
+public abstract class ConcurrentDataBlockWindow<TKey, TValue> : IConcurrentDataBlockWindow<TKey, TValue> where TKey: INumber<TKey>
 {
     private readonly int _windowFrameSize;
     private readonly object _lock = new();
-    private readonly ConcurrentDictionary<TKey, TValue> _blocksOnFly = new();
-    private readonly ILogger<ConcurrentOnFlyDataBlockWindow<TKey, TValue>> _logger;
+    protected readonly ConcurrentDictionary<TKey, TValue> _blocksOnFly = new();
+    private readonly ILogger<ConcurrentDataBlockWindow<TKey, TValue>> _logger;
 
-    public ConcurrentOnFlyDataBlockWindow(int windowFrameSize, ILogger<ConcurrentOnFlyDataBlockWindow<TKey, TValue>> logger)
+    protected ConcurrentDataBlockWindow(int windowFrameSize, ILogger<ConcurrentDataBlockWindow<TKey, TValue>> logger)
     {
         _windowFrameSize = windowFrameSize;
         _logger = logger;
     }
 
-    public bool TryAddBlock(DataBlockWithId<TKey, TValue> blockWithId)
+    public virtual bool TryAddBlock(DataBlockWithId<TKey, TValue> blockWithId)
     {
         lock (_lock)
         {
@@ -38,7 +38,7 @@ public class ConcurrentOnFlyDataBlockWindow<TKey, TValue> : IConcurrentOnFlyData
         }
     }
 
-    public TValue GetValueOrDefault(TKey blockId)
+    public virtual TValue GetValueOrDefault(TKey blockId)
     {
         var wasGet = _blocksOnFly.TryGetValue(blockId, out var value);
         if (wasGet)
@@ -54,11 +54,11 @@ public class ConcurrentOnFlyDataBlockWindow<TKey, TValue> : IConcurrentOnFlyData
 
     }
 
-    public int GetCurrentCount() => _blocksOnFly.Count;
+    public virtual int GetCurrentCount() => _blocksOnFly.Count;
 
-    public int GetWindowFrameSize() => _windowFrameSize;
+    public virtual int GetWindowFrameSize() => _windowFrameSize;
 
-    public bool TryRemove(TKey blockId)
+    public virtual bool TryRemove(TKey blockId)
     {
         _logger.LogInformation("Block with id {id} was asked to remove from window", blockId);
         return _blocksOnFly.TryRemove(blockId, out _);

@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using TCPViaUDP.Helpers.ConcurrentWindow;
 using TCPViaUDP.Models;
 using Xbehave;
 
-namespace TCPviaUDP.Tests.Helpers.ConcurrentOnFlyDataBlockWindow;
+namespace TCPviaUDP.Tests.Helpers.ConcurrentDataBlockWindow;
 
-public class ConcurrentOnFlyDataBlockWindowTests
+public class ConcurrentDataBlockWindowTests
 {
-    private IConcurrentOnFlyDataBlockWindow<int, int> _concurrentWindow;
-    private ILogger<ConcurrentOnFlyDataBlockWindow<int, int>> _logger;
+    private IConcurrentDataBlockWindow<long, Memory<byte>> _concurrentWindow;
+    private ILogger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>> _logger;
     private const int WINDOW_SIZE = 2;
+    private Memory<byte> _value;
 
     /// <summary>
     /// Для каждого сценария создаем окно.
@@ -20,8 +20,9 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Дано скользящее окно".x(() =>
         {
-            _logger = new Logger<ConcurrentOnFlyDataBlockWindow<int, int>>(new LoggerFactory());
-            _concurrentWindow = new ConcurrentOnFlyDataBlockWindow<int, int>(WINDOW_SIZE, _logger);
+            _logger = new Logger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>>(new LoggerFactory());
+            _concurrentWindow = new LongKeyMemoryByteConcurrentWindow(WINDOW_SIZE, _logger);
+            _value = "Some value"u8.ToArray();
         });
     }
 
@@ -32,8 +33,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Когда добавляются элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
             var isFirstAdded = _concurrentWindow.TryAddBlock(block1);
             var isSecondAdded = _concurrentWindow.TryAddBlock(block2);
@@ -50,8 +51,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Когда добавляются элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block1WithSameKey = block1 with { Data = 2 };
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block1WithSameKey = block1 with { Data = _value };
 
             var isKeyAdded = _concurrentWindow.TryAddBlock(block1);
             var isKeyAddedAgain = _concurrentWindow.TryAddBlock(block1WithSameKey);
@@ -62,7 +63,7 @@ public class ConcurrentOnFlyDataBlockWindowTests
         "Не элементы добавлены, повторный ключ перезаписал значение".x(() =>
         {
             Assert.True(isAllAdded);
-            Assert.Equal(2, _concurrentWindow.GetValueOrDefault(1));
+            Assert.Equal(_value, _concurrentWindow.GetValueOrDefault(1));
         });
         "Количество элементов верное".x(() => Assert.Equal(1, _concurrentWindow.GetCurrentCount()));
     }
@@ -72,9 +73,9 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Когда добавляются элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
-            var block3 = new DataBlockWithId<int, int>(3, 3);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
+            var block3 = new LongKeyMemoryByteDataBlock(3, _value);
 
             isFirstAdded = _concurrentWindow.TryAddBlock(block1);
             isSecondAdded = _concurrentWindow.TryAddBlock(block2);
@@ -101,8 +102,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Даны элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
             _concurrentWindow.TryAddBlock(block1);
             _concurrentWindow.TryAddBlock(block2);
@@ -113,8 +114,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
             var foundFirstValue = _concurrentWindow.GetValueOrDefault(1);
             var foundSecondValue = _concurrentWindow.GetValueOrDefault(2);
 
-            Assert.Equal(1, foundFirstValue);
-            Assert.Equal(2, foundSecondValue);
+            Assert.Equal(_value, foundFirstValue);
+            Assert.Equal(_value, foundSecondValue);
         });
     }
 
@@ -123,8 +124,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Даны элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
             _concurrentWindow.TryAddBlock(block1);
             _concurrentWindow.TryAddBlock(block2);
@@ -132,9 +133,9 @@ public class ConcurrentOnFlyDataBlockWindowTests
 
         "Значение по отсутсвующему ключу не находится - возвращается значение по умолчанию".x(() =>
         {
-            var notFountValue = _concurrentWindow.GetValueOrDefault(3);
+            var notFoundValue = _concurrentWindow.GetValueOrDefault(3);
 
-            Assert.Equal(default, notFountValue);
+            Assert.Equal(default, notFoundValue);
         });
     }
 
@@ -158,8 +159,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Даны элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
             _concurrentWindow.TryAddBlock(block1);
             _concurrentWindow.TryAddBlock(block2);
@@ -174,8 +175,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
     {
         "Даны элементы".x(() =>
         {
-            var block1 = new DataBlockWithId<int, int>(1, 1);
-            var block2 = new DataBlockWithId<int, int>(2, 2);
+            var block1 = new LongKeyMemoryByteDataBlock(1, _value);
+            var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
             _concurrentWindow.TryAddBlock(block1);
             _concurrentWindow.TryAddBlock(block2);
@@ -197,7 +198,7 @@ public class ConcurrentOnFlyDataBlockWindowTests
     #region ConcurrentTests
 
     [Scenario]
-    public async Task TestConcurrentAccess(List<Task> tasks, int maxCount)
+    public void TestConcurrentAccess(List<Task> tasks, int maxCount)
     {
         "Дан список задач".x(() => tasks = new List<Task>());
         "Дано значение для подсчета количества элементов в окне".x(() => maxCount = 0);
@@ -209,8 +210,8 @@ public class ConcurrentOnFlyDataBlockWindowTests
                 int id = i;
                 tasks.Add(Task.Run(() =>
                 {
-                    _concurrentWindow.TryAddBlock(new DataBlockWithId<int, int>(id, id));
-                    var value = _concurrentWindow.GetValueOrDefault(id);
+                    _concurrentWindow.TryAddBlock(new LongKeyMemoryByteDataBlock(id, _value));
+                    _concurrentWindow.GetValueOrDefault(id);
                     maxCount = Math.Max(maxCount, _concurrentWindow.GetCurrentCount());
                     _concurrentWindow.TryRemove(id);
                 }));
