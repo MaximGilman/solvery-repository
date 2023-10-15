@@ -80,11 +80,11 @@
         /// Проверить, что значение меньше или равно.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsLess<T>(T first, T second) where T : IComparable
+        public static void IsLess<T>(T valueToCheck, T valueToCompare) where T : IComparable
         {
-            if (first?.CompareTo(second) >= 0 || Comparer<T>.Default.Compare(first, second) >= 0)
+            if (valueToCheck?.CompareTo(valueToCompare) >= 0 || Comparer<T>.Default.Compare(valueToCheck, valueToCompare) >= 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше указанного значения  {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше указанного значения  {valueToCompare}", nameof(valueToCheck));
             }
         }
 
@@ -92,11 +92,11 @@
         /// Проверить, что значение меньше.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsLessOrEqual<T>(T first, T second) where T : IComparable
+        public static void IsLessOrEqual<T>(T valueToCheck, T valueToCompare) where T : IComparable
         {
-            if (first?.CompareTo(second) > 0 || Comparer<T>.Default.Compare(first, second) > 0)
+            if (valueToCheck?.CompareTo(valueToCompare) > 0 || Comparer<T>.Default.Compare(valueToCheck, valueToCompare) > 0)
             {
-                throw new ArgumentException($"Значение должно быть меньше или равно указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть меньше или равно указанного значения {valueToCompare}", nameof(valueToCheck));
             }
         }
 
@@ -104,12 +104,12 @@
         /// Проверить, что значение строго больше.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsGreater<T>(T first, T second) where T : IComparable
+        public static void IsGreater<T>(T valueToCheck, T valueToCompare) where T : IComparable
         {
-            if (first?.CompareTo(second) <= 0 || Comparer<T>.Default.Compare(first, second) <= 0)
+            if (valueToCheck?.CompareTo(valueToCompare) <= 0 || Comparer<T>.Default.Compare(valueToCheck, valueToCompare) <= 0)
 
             {
-                throw new ArgumentException($"Значение должно быть больше указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше указанного значения {valueToCompare}", nameof(valueToCheck));
             }
         }
 
@@ -117,11 +117,11 @@
         /// Проверить, что значение больше или равно.
         /// </summary>
         /// <typeparam name="T">Тип сравниваемых элементов.</typeparam>
-        public static void IsGreaterOrEqual<T>(T first, T second) where T : IComparable
+        public static void IsGreaterOrEqual<T>(T valueToCheck, T valueToCompare) where T : IComparable
         {
-            if (first?.CompareTo(second) < 0 || Comparer<T>.Default.Compare(first, second) < 0)
+            if (valueToCheck?.CompareTo(valueToCompare) < 0 || Comparer<T>.Default.Compare(valueToCheck, valueToCompare) < 0)
             {
-                throw new ArgumentException($"Значение должно быть больше или равно указанного значения {second}", nameof(first));
+                throw new ArgumentException($"Значение должно быть больше или равно указанного значения {valueToCompare}", nameof(valueToCheck));
             }
         }
     }
