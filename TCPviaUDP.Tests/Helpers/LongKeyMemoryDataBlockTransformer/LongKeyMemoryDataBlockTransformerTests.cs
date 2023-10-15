@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using TCPViaUDP.Models;
+using TCPViaUDP.Models.DataBlocks;
 using TCPviaUDP.Tests.Models;
 using Xbehave;
 using ImplementationTransformer = TCPViaUDP.Helpers.DataBlockTransformer.LongKeyMemoryDataBlockTransformer;

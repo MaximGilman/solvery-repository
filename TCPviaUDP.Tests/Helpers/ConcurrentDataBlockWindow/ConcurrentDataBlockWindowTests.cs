@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using TCPViaUDP.Helpers.ConcurrentWindow;
 using TCPViaUDP.Models;
+using TCPViaUDP.Models.DataBlocks;
 using Xbehave;
 
 namespace TCPviaUDP.Tests.Helpers.ConcurrentDataBlockWindow;

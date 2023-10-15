@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Utils.Guards;
 
-namespace TCPViaUDP.Models;
+namespace TCPViaUDP.Models.DataBlocks;
 
 public record DataBlockWithId<TKey, TValue> : DataBlock<TValue> where TKey : INumber<TKey>
 {

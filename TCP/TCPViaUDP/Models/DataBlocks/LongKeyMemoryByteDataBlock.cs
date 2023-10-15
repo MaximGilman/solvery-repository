@@ -1,6 +1,6 @@
 ﻿using Utils.Guards;
 
-namespace TCPViaUDP.Models;
+namespace TCPViaUDP.Models.DataBlocks;
 
 public record LongKeyMemoryByteDataBlock : DataBlockWithId<long, Memory<byte>>
 {

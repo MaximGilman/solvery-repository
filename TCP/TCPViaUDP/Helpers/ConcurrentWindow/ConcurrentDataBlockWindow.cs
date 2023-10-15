@@ -2,6 +2,7 @@
 using System.Numerics;
 using Microsoft.Extensions.Logging;
 using TCPViaUDP.Models;
+using TCPViaUDP.Models.DataBlocks;
 
 namespace TCPViaUDP.Helpers.ConcurrentWindow;
 

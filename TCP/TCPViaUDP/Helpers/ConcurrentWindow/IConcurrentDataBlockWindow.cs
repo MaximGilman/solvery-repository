@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using TCPViaUDP.Models;
+using TCPViaUDP.Models.DataBlocks;
 
 namespace TCPViaUDP.Helpers.ConcurrentWindow;
 
