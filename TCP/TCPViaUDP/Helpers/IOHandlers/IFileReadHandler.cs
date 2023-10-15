@@ -6,7 +6,7 @@
 public interface IFileReadHandler
 {
     /// <summary>
-    /// Обработать файл.
+    /// Обработать чтение файла.
     /// </summary>
     public Task HandleAsync();
 }

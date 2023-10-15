@@ -19,7 +19,7 @@ public class TCPViaUDPReceiver : IDisposable
     private readonly ILogger<TCPViaUDPReceiver> _logger;
     private readonly UdpClient _udpClient;
     private readonly List<Task> _tasks = new();
-    private readonly IFileHandler _fileHandler;
+    private readonly IFileReadHandler _fileHandler;
     private IPEndPoint _targetSenderEndPoint;
 
     private readonly ConcurrentDictionary<int, Memory<byte>> _receivedBlocks = new();
@@ -30,7 +30,7 @@ public class TCPViaUDPReceiver : IDisposable
         _udpClient = new UdpClient(portReceive);
         _logger = logger;
 
-        _fileHandler = new GarbageFileHandler(new SequentialBlockSelector<int, Memory<byte>>(this.GetKeys, this.PrepareBlocksByKeysToSave));
+        _fileHandler = default;
     }
 
     public async Task HandleAllReceiveAsync(CancellationToken cancellationToken)

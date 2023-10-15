@@ -7,7 +7,7 @@ namespace TCPviaUDP.Tests.Helpers.ConcurrentDataBlockWindow;
 
 public class ConcurrentDataBlockWindowTests
 {
-    private IConcurrentDataBlockWindow<long, Memory<byte>> _concurrentWindow;
+    private IConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>> _concurrentWindow;
     private ILogger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>> _logger;
     private const int WINDOW_SIZE = 2;
     private Memory<byte> _value;
@@ -203,17 +203,30 @@ public class ConcurrentDataBlockWindowTests
         "Дан список задач".x(() => tasks = new List<Task>());
         "Дано значение для подсчета количества элементов в окне".x(() => maxCount = 0);
 
-        "Когда запускаем несколько потоков на работу".x (() =>
+        "Когда запускаем несколько потоков на работу".x(() =>
         {
             for (int i = 1; i <= 1000; i++)
             {
                 int id = i;
+                // Поток для добавления и чтения.
                 tasks.Add(Task.Run(() =>
                 {
                     _concurrentWindow.TryAddBlock(new LongKeyMemoryByteDataBlock(id, _value));
                     _concurrentWindow.GetValueOrDefault(id);
                     maxCount = Math.Max(maxCount, _concurrentWindow.GetCurrentCount());
-                    _concurrentWindow.TryRemove(id);
+                }));
+
+                // Поток для удаления.
+                tasks.Add(Task.Run(() =>
+                {
+                    var deletedSuccessfully = false;
+                    while (!deletedSuccessfully)
+                    {
+                        if (!_concurrentWindow.GetValueOrDefault(id).IsEmpty)
+                        {
+                            deletedSuccessfully =  _concurrentWindow.TryRemove(id);
+                        }
+                    }
                 }));
             }
         });
@@ -222,10 +235,7 @@ public class ConcurrentDataBlockWindowTests
             await Task.WhenAll(tasks);
             Assert.Equal(0, _concurrentWindow.GetCurrentCount());
         });
-        "Размер окна не был превышен".x(() =>
-        {
-            Assert.True(maxCount <= _concurrentWindow.GetWindowFrameSize());
-        });
+        "Размер окна не был превышен".x(() => { Assert.True(maxCount <= _concurrentWindow.GetWindowFrameSize()); });
     }
 
     #endregion
