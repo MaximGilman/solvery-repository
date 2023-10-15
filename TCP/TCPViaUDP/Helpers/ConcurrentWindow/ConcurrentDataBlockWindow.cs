@@ -21,6 +21,7 @@ public abstract class ConcurrentDataBlockWindow<TKey, TValue> : IConcurrentDataB
         _logger = logger;
     }
 
+    // TODO: Переписать все ошибки на русский
     public virtual bool TryAddBlock(DataBlockWithId<TKey, TValue> blockWithId)
     {
         lock (_lock)
