@@ -6,42 +6,39 @@ namespace TCPViaUDP.Helpers.IOHandlers;
 
 public class FileReadBlockHandler : IFileReadHandler
 {
-    private readonly string _filePath;
-    private readonly int _bufferSize;
-    private readonly FileShare _fileShareOption = FileShare.None;
-    private readonly Func<Memory<byte>, int, Task> _blockActionAsync;
+    private readonly FileShare _fileShareOption;
+    private readonly Func<long, Memory<byte>, Task> _blockActionAsync;
+    private readonly AutoResetEvent _onCanAct;
     private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Create();
-    private ILogger<FileReadBlockHandler> _logger;
+    private readonly ILogger<FileReadBlockHandler> _logger;
 
-    public FileReadBlockHandler(string filePath, int bufferSize, Func<Memory<byte>, int, Task> blockActionAsync, ILogger<FileReadBlockHandler> logger,
+    public FileReadBlockHandler(Func<long, Memory<byte>, Task> blockActionAsync, AutoResetEvent onCanAct, ILogger<FileReadBlockHandler> logger,
         FileShare fileShareOption = FileShare.None)
     {
-        Guard.IsNotNullOrWhiteSpace(filePath);
-        Guard.IsTrue(() => File.Exists(filePath), "Файл не существует");
-        _filePath = filePath;
-
-        Guard.IsNotDefault(bufferSize);
-        Guard.IsGreaterOrEqual(bufferSize, 0);
-        Guard.IsTrue(() => bufferSize % 1024 == 0, "Размер буффера должен быть кратен 1 КБ");
-        _bufferSize = bufferSize;
-
         Guard.IsNotDefault(blockActionAsync);
         Guard.IsNotNull(blockActionAsync);
         _blockActionAsync = blockActionAsync;
-
+        _onCanAct = onCanAct;
         _logger = logger;
-
         _fileShareOption = fileShareOption;
     }
 
-    public async Task HandleAsync()
+    public async Task HandleAsync(string filePath, int bufferSize)
     {
+        Guard.IsNotNullOrWhiteSpace(filePath);
+        Guard.IsTrue(() => File.Exists(filePath), "Файл не существует");
+
+        Guard.IsNotDefault(bufferSize);
+        Guard.IsGreater(bufferSize, 0);
+
+        long blockCounter = 1;
         try
         {
-            await using var fs = new FileStream(_filePath, FileMode.Open, FileAccess.Read, _fileShareOption);
+            await using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, _fileShareOption);
             while (true)
             {
-                var buffer = _arrayPool.Rent(_bufferSize);
+                _onCanAct.WaitOne();
+                var buffer = _arrayPool.Rent(bufferSize);
                 try
                 {
                     var readBytes = await fs.ReadAsync(buffer);
@@ -53,7 +50,8 @@ public class FileReadBlockHandler : IFileReadHandler
                     }
                     else
                     {
-                        await _blockActionAsync(buffer, readBytes);
+                        await _blockActionAsync(blockCounter,buffer);
+                        blockCounter++;
                     }
                 }
                 finally
@@ -65,7 +63,6 @@ public class FileReadBlockHandler : IFileReadHandler
         catch (Exception exception)
         {
             _logger.LogError("При чтении файла произошло исключение {error}", exception.Message);
-
         }
     }
 }

@@ -5,9 +5,9 @@ using Utils.Guards;
 
 namespace TCPViaUDP.Helpers.ConcurrentWindow;
 
-public class LongKeyMemoryByteConcurrentWindow : ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>
+public class LongKeyMemoryByteAcknowledgedConcurrentBlockWindow : AcknowledgedConcurrentBlockWindow<long, Memory<byte>>
 {
-    public LongKeyMemoryByteConcurrentWindow(int windowFrameSize, ILogger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>> logger) : base(windowFrameSize, logger)
+    public LongKeyMemoryByteAcknowledgedConcurrentBlockWindow(int windowFrameSize, ILogger<AcknowledgedConcurrentBlockWindow<long, Memory<byte>>> logger) : base(windowFrameSize, logger)
     {
     }
 

@@ -8,5 +8,7 @@ public interface IFileReadHandler
     /// <summary>
     /// Обработать чтение файла.
     /// </summary>
-    public Task HandleAsync();
+    /// <param name="filePath"></param>
+    /// <param name="bufferSize"></param>
+    public Task HandleAsync(string filePath, int bufferSize);
 }

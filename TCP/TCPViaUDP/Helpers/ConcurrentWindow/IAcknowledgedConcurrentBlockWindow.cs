@@ -2,7 +2,7 @@
 
 namespace TCPViaUDP.Helpers.ConcurrentWindow;
 
-public interface IConcurrentDataBlockWindowWithLastAcknowledged<TKey, TValue> : IConcurrentDataBlockWindow<TKey, TValue> where TKey : INumber<TKey>
+public interface IAcknowledgedConcurrentBlockWindow<TKey, TValue> : IConcurrentBlockWindow<TKey, TValue> where TKey : INumber<TKey>
 {
     /// <summary>
     /// Получить последний подтвержденный ключ.

@@ -8,8 +8,8 @@ namespace TCPviaUDP.Tests.Helpers.ConcurrentDataBlockWindow;
 
 public class ConcurrentDataBlockWindowTests
 {
-    private IConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>> _concurrentWindow;
-    private ILogger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>> _logger;
+    private IAcknowledgedConcurrentBlockWindow<long, Memory<byte>> _acknowledgedConcurrentWindow;
+    private ILogger<AcknowledgedConcurrentBlockWindow<long, Memory<byte>>> _logger;
     private const int WINDOW_SIZE = 2;
     private Memory<byte> _value;
 
@@ -21,8 +21,8 @@ public class ConcurrentDataBlockWindowTests
     {
         "Дано скользящее окно".x(() =>
         {
-            _logger = new Logger<ConcurrentDataBlockWindowWithLastAcknowledged<long, Memory<byte>>>(new LoggerFactory());
-            _concurrentWindow = new LongKeyMemoryByteConcurrentWindow(WINDOW_SIZE, _logger);
+            _logger = new Logger<AcknowledgedConcurrentBlockWindow<long, Memory<byte>>>(new LoggerFactory());
+            _acknowledgedConcurrentWindow = new LongKeyMemoryByteAcknowledgedConcurrentBlockWindow(WINDOW_SIZE, _logger);
             _value = "Some value"u8.ToArray();
         });
     }
@@ -37,14 +37,14 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
-            var isFirstAdded = _concurrentWindow.TryAddBlock(block1);
-            var isSecondAdded = _concurrentWindow.TryAddBlock(block2);
+            var isFirstAdded = _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            var isSecondAdded = _acknowledgedConcurrentWindow.TryAddBlock(block2);
 
             isAllAdded = isFirstAdded && isSecondAdded;
         });
 
         "Все элементы добавлены".x(() => Assert.True(isAllAdded));
-        "Количество элементов верное".x(() => Assert.Equal(WINDOW_SIZE, _concurrentWindow.GetCurrentCount()));
+        "Количество элементов верное".x(() => Assert.Equal(WINDOW_SIZE, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     [Scenario]
@@ -55,8 +55,8 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block1WithSameKey = block1 with { Block = new DataBlock<Memory<byte>>(_value) };
 
-            var isKeyAdded = _concurrentWindow.TryAddBlock(block1);
-            var isKeyAddedAgain = _concurrentWindow.TryAddBlock(block1WithSameKey);
+            var isKeyAdded = _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            var isKeyAddedAgain = _acknowledgedConcurrentWindow.TryAddBlock(block1WithSameKey);
 
             isAllAdded = isKeyAdded && isKeyAddedAgain;
         });
@@ -64,9 +64,9 @@ public class ConcurrentDataBlockWindowTests
         "Не элементы добавлены, повторный ключ перезаписал значение".x(() =>
         {
             Assert.True(isAllAdded);
-            Assert.Equal(_value, _concurrentWindow.GetValueOrDefault(1));
+            Assert.Equal(_value, _acknowledgedConcurrentWindow.GetValueOrDefault(1));
         });
-        "Количество элементов верное".x(() => Assert.Equal(1, _concurrentWindow.GetCurrentCount()));
+        "Количество элементов верное".x(() => Assert.Equal(1, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     [Scenario]
@@ -78,9 +78,9 @@ public class ConcurrentDataBlockWindowTests
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
             var block3 = new LongKeyMemoryByteDataBlock(3, _value);
 
-            isFirstAdded = _concurrentWindow.TryAddBlock(block1);
-            isSecondAdded = _concurrentWindow.TryAddBlock(block2);
-            isThirdAdded = _concurrentWindow.TryAddBlock(block3);
+            isFirstAdded = _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            isSecondAdded = _acknowledgedConcurrentWindow.TryAddBlock(block2);
+            isThirdAdded = _acknowledgedConcurrentWindow.TryAddBlock(block3);
             isAllAdded = isFirstAdded && isSecondAdded && isThirdAdded;
         });
 
@@ -91,7 +91,7 @@ public class ConcurrentDataBlockWindowTests
             Assert.True(isSecondAdded);
             Assert.False(isThirdAdded);
         });
-        "Количество элементов верное, окно не превышено".x(() => Assert.Equal(WINDOW_SIZE, _concurrentWindow.GetCurrentCount()));
+        "Количество элементов верное, окно не превышено".x(() => Assert.Equal(WINDOW_SIZE, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     #endregion
@@ -106,14 +106,14 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
-            _concurrentWindow.TryAddBlock(block1);
-            _concurrentWindow.TryAddBlock(block2);
+            _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            _acknowledgedConcurrentWindow.TryAddBlock(block2);
         });
 
         "Значение по имеющемуся ключу находится".x(() =>
         {
-            var foundFirstValue = _concurrentWindow.GetValueOrDefault(1);
-            var foundSecondValue = _concurrentWindow.GetValueOrDefault(2);
+            var foundFirstValue = _acknowledgedConcurrentWindow.GetValueOrDefault(1);
+            var foundSecondValue = _acknowledgedConcurrentWindow.GetValueOrDefault(2);
 
             Assert.Equal(_value, foundFirstValue);
             Assert.Equal(_value, foundSecondValue);
@@ -128,13 +128,13 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
-            _concurrentWindow.TryAddBlock(block1);
-            _concurrentWindow.TryAddBlock(block2);
+            _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            _acknowledgedConcurrentWindow.TryAddBlock(block2);
         });
 
         "Значение по отсутсвующему ключу не находится - возвращается значение по умолчанию".x(() =>
         {
-            var notFoundValue = _concurrentWindow.GetValueOrDefault(3);
+            var notFoundValue = _acknowledgedConcurrentWindow.GetValueOrDefault(3);
 
             Assert.Equal(default, notFoundValue);
         });
@@ -145,7 +145,7 @@ public class ConcurrentDataBlockWindowTests
     {
         "Значение по отсутсвующему ключу не находится - возвращается значение по умолчанию".x(() =>
         {
-            var notFountValue = _concurrentWindow.GetValueOrDefault(1);
+            var notFountValue = _acknowledgedConcurrentWindow.GetValueOrDefault(1);
 
             Assert.Equal(default, notFountValue);
         });
@@ -163,12 +163,12 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
-            _concurrentWindow.TryAddBlock(block1);
-            _concurrentWindow.TryAddBlock(block2);
+            _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            _acknowledgedConcurrentWindow.TryAddBlock(block2);
         });
 
-        "Когда удаляется существующий элемент".x(() => _concurrentWindow.TryRemove(1));
-        "Количество элементов уменьшается".x(() => Assert.Equal(1, _concurrentWindow.GetCurrentCount()));
+        "Когда удаляется существующий элемент".x(() => _acknowledgedConcurrentWindow.TryRemove(1));
+        "Количество элементов уменьшается".x(() => Assert.Equal(1, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     [Scenario]
@@ -179,19 +179,19 @@ public class ConcurrentDataBlockWindowTests
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
             var block2 = new LongKeyMemoryByteDataBlock(2, _value);
 
-            _concurrentWindow.TryAddBlock(block1);
-            _concurrentWindow.TryAddBlock(block2);
+            _acknowledgedConcurrentWindow.TryAddBlock(block1);
+            _acknowledgedConcurrentWindow.TryAddBlock(block2);
         });
 
-        "Когда удаляется не существующий элемент".x(() => _concurrentWindow.TryRemove(3));
-        "Количество элементов не уменьшается".x(() => Assert.Equal(2, _concurrentWindow.GetCurrentCount()));
+        "Когда удаляется не существующий элемент".x(() => _acknowledgedConcurrentWindow.TryRemove(3));
+        "Количество элементов не уменьшается".x(() => Assert.Equal(2, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     [Scenario]
     public void TryRemove_WhenEmpty()
     {
-        "Когда удаляется не существующий элемент".x(() => _concurrentWindow.TryRemove(1));
-        "Количество элементов не уменьшается".x(() => Assert.Equal(0, _concurrentWindow.GetCurrentCount()));
+        "Когда удаляется не существующий элемент".x(() => _acknowledgedConcurrentWindow.TryRemove(1));
+        "Количество элементов не уменьшается".x(() => Assert.Equal(0, _acknowledgedConcurrentWindow.GetCurrentCount()));
     }
 
     #endregion
@@ -212,9 +212,9 @@ public class ConcurrentDataBlockWindowTests
                 // Поток для добавления и чтения.
                 tasks.Add(Task.Run(() =>
                 {
-                    _concurrentWindow.TryAddBlock(new LongKeyMemoryByteDataBlock(id, _value));
-                    _concurrentWindow.GetValueOrDefault(id);
-                    maxCount = Math.Max(maxCount, _concurrentWindow.GetCurrentCount());
+                    _acknowledgedConcurrentWindow.TryAddBlock(new LongKeyMemoryByteDataBlock(id, _value));
+                    _acknowledgedConcurrentWindow.GetValueOrDefault(id);
+                    maxCount = Math.Max(maxCount, _acknowledgedConcurrentWindow.GetCurrentCount());
                 }));
 
                 // Поток для удаления.
@@ -223,9 +223,9 @@ public class ConcurrentDataBlockWindowTests
                     var deletedSuccessfully = false;
                     while (!deletedSuccessfully)
                     {
-                        if (!_concurrentWindow.GetValueOrDefault(id).IsEmpty)
+                        if (!_acknowledgedConcurrentWindow.GetValueOrDefault(id).IsEmpty)
                         {
-                            deletedSuccessfully =  _concurrentWindow.TryRemove(id);
+                            deletedSuccessfully =  _acknowledgedConcurrentWindow.TryRemove(id);
                         }
                     }
                 }));
@@ -234,9 +234,9 @@ public class ConcurrentDataBlockWindowTests
         "После окончания выполнения окно пустое".x(async () =>
         {
             await Task.WhenAll(tasks);
-            Assert.Equal(0, _concurrentWindow.GetCurrentCount());
+            Assert.Equal(0, _acknowledgedConcurrentWindow.GetCurrentCount());
         });
-        "Размер окна не был превышен".x(() => { Assert.True(maxCount <= _concurrentWindow.GetWindowFrameSize()); });
+        "Размер окна не был превышен".x(() => { Assert.True(maxCount <= _acknowledgedConcurrentWindow.GetWindowFrameSize()); });
     }
 
     #endregion

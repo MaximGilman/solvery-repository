@@ -8,18 +8,19 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
 {
     private readonly UdpClient _udpClient;
     private readonly TimeSpan _acknowledgmentDelay;
+    private readonly int _maxErrorRetry;
 
     private readonly Func<DataNetworkBlockResult, Task> _onReceived;
     private readonly Func<EmptyNetworkBlockResult, Task> _onUnreceived;
     private readonly ILogger<INetworkBlockAcknowledger> _logger;
     private int _retryCount;
-    private const int MAX_ERROR_RETRY_AMOUNT = 2;
 
-    public NetworkBlockAcknowledger(UdpClient udpClient, TimeSpan acknowledgmentDelay, Func<DataNetworkBlockResult, Task> onReceived,
+    public NetworkBlockAcknowledger(UdpClient udpClient, TimeSpan acknowledgmentDelay, int maxErrorRetry, Func<DataNetworkBlockResult, Task> onReceived,
         Func<EmptyNetworkBlockResult, Task> onUnreceived, ILogger<INetworkBlockAcknowledger> logger)
     {
         _udpClient = udpClient;
         _acknowledgmentDelay = acknowledgmentDelay;
+        _maxErrorRetry = maxErrorRetry;
         this._onReceived = onReceived;
         this._onUnreceived = onUnreceived;
         _logger = logger;
@@ -46,7 +47,7 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
             {
                 _retryCount++;
 
-                if (_retryCount > MAX_ERROR_RETRY_AMOUNT)
+                if (_retryCount > _maxErrorRetry)
                 {
                     _logger.LogError("Превышено количество переповторов получения подтвержения с ошибкой {error}", exception.Message);
                     throw;
@@ -54,7 +55,7 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
                 else
                 {
                     _logger.LogInformation("При получении подтверждения произошла ошибка {error}. Переповторяю отправку {current} из {count}.",
-                        exception.Message, _retryCount, MAX_ERROR_RETRY_AMOUNT);
+                        exception.Message, _retryCount, _maxErrorRetry);
                 }
             }
         }

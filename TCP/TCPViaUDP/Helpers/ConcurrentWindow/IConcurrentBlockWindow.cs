@@ -7,7 +7,7 @@ namespace TCPViaUDP.Helpers.ConcurrentWindow;
 /// <summary>
 /// Скользящее окно блоков данных в обработке.
 /// </summary>
-public interface IConcurrentDataBlockWindow<TKey, TValue> where TKey : INumber<TKey>
+public interface IConcurrentBlockWindow<TKey, TValue> where TKey : INumber<TKey>
 {
     /// <summary>
     /// Попытаться добавить блок по ключу.
