@@ -32,12 +32,8 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
             try
             {
                 var result = await _udpClient.ReceiveAsync(cancellationToken).AsTask().WaitAsync(this._acknowledgmentDelay, cancellationToken);
-
                 // Отправить сообщение, что получили результат.
-                await _onReceived(new DataNetworkBlockResult()
-                {
-                    Data = result.Buffer
-                });
+                await _onReceived(new DataNetworkBlockResult(result.Buffer));
             }
             catch (TimeoutException)
             {

@@ -1,6 +1,5 @@
 ﻿namespace TCPViaUDP.Models.NetworkBlockReceiverResults;
 
-public class DataNetworkBlockResult : NetworkBlockResultBase
+public record DataNetworkBlockResult(Memory<byte> Data) : NetworkBlockResultBase(Data.IsEmpty)
 {
-    public Memory<byte> Data { get; init; }
 }

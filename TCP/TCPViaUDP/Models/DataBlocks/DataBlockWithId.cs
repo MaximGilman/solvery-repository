@@ -3,28 +3,30 @@ using Utils.Guards;
 
 namespace TCPViaUDP.Models.DataBlocks;
 
-public record DataBlockWithId<TKey, TValue> : DataBlock<TValue> where TKey : INumber<TKey>
+public record DataBlockWithId<TKey, TValue> where TKey : INumber<TKey>
 {
-    public TKey BlockId { get; init; }
+    public TKey Id { get; init; }
+    public DataBlock<TValue> Block { get; init; }
 
-    public DataBlockWithId(TKey blockId, TValue data) : base(data)
+    public DataBlockWithId(TKey id, TValue data)
     {
-        Guard.IsNotDefault(blockId);
+        Guard.IsNotDefault(id);
         Guard.IsNotDefault(data);
         Guard.IsNotNull(data);
 
-        BlockId = blockId;
+        Id = id;
+        Block = new DataBlock<TValue>(data);
     }
 
-    public DataBlockWithId(TKey blockId, DataBlock<TValue> dataBlock) : base(dataBlock)
+    public DataBlockWithId(TKey id, DataBlock<TValue> dataBlock)
     {
-        Guard.IsNotDefault(blockId);
+        Guard.IsNotDefault(id);
         Guard.IsNotDefault(dataBlock);
         Guard.IsNotNull(dataBlock);
         Guard.IsNotDefault(dataBlock.Data);
         Guard.IsNotNull(dataBlock.Data);
 
-        BlockId = blockId;
-        Data = dataBlock.Data;
+        Id = id;
+        Block = dataBlock;
     }
 }

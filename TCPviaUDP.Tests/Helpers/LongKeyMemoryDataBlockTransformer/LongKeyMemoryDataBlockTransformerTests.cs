@@ -2,6 +2,7 @@
 using TCPViaUDP.Models;
 using TCPViaUDP.Models.DataBlocks;
 using TCPviaUDP.Tests.Models;
+using Utils.Constants;
 using Xbehave;
 using ImplementationTransformer = TCPViaUDP.Helpers.DataBlockTransformer.LongKeyMemoryDataBlockTransformer;
 
@@ -36,7 +37,6 @@ public class LongKeyMemoryDataBlockTransformerTests
     // Блок с неправильно позинионируемым ключем.
     private Memory<byte> _errorPositionedBlock;
 
-    private const int LONG_SIZE = ImplementationTransformer.LONG_SIZE;
     private const int CORRECT_BLOCK_ID = 1;
     private const int INCORRECT_BLOCK_ID = -1;
 
@@ -52,9 +52,9 @@ public class LongKeyMemoryDataBlockTransformerTests
             _existedKeyBytes = BitConverter.GetBytes(CORRECT_BLOCK_ID);
             _existedNegativeKeyBytes = BitConverter.GetBytes(INCORRECT_BLOCK_ID);
 
-            var correctPositionedBlock = new byte[LONG_SIZE + _existedDataBytes.Length];
+            var correctPositionedBlock = new byte[TypeSizeConstants.LONG_SIZE + _existedDataBytes.Length];
             Buffer.BlockCopy(_existedKeyBytes, 0, correctPositionedBlock, 0, _existedKeyBytes.Length);
-            Buffer.BlockCopy(_existedDataBytes, 0, correctPositionedBlock, LONG_SIZE, _existedDataBytes.Length);
+            Buffer.BlockCopy(_existedDataBytes, 0, correctPositionedBlock, TypeSizeConstants.LONG_SIZE, _existedDataBytes.Length);
             _existedBlock = new Memory<byte>(correctPositionedBlock);
 
             // Блок, который не отступает размер для типа ключа, а просто пишет по длине его значения.
@@ -82,9 +82,9 @@ public class LongKeyMemoryDataBlockTransformerTests
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученный блок содержит нужные данные".x(() =>
         {
-            Assert.Equal(CORRECT_BLOCK_ID, block.BlockId);
-            Assert.Equal(_existedDataBytes.Length, block.Data.Length);
-            foreach (var (exp, act) in _existedDataBytes.Zip(block.Data.ToArray()))
+            Assert.Equal(CORRECT_BLOCK_ID, block.Id);
+            Assert.Equal(_existedDataBytes.Length, block.Block.Data.Length);
+            foreach (var (exp, act) in _existedDataBytes.Zip(block.Block.Data.ToArray()))
             {
                 Assert.Equal(exp, act);
             }
@@ -111,9 +111,9 @@ public class LongKeyMemoryDataBlockTransformerTests
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученный блок содержит неверные данные".x(() =>
         {
-            Assert.NotEqual(CORRECT_BLOCK_ID, block.BlockId);
-            Assert.NotEqual(_errorPositionedBlock.Length, block.Data.Length);
-            Assert.NotEqual(_errorPositionedBlock, block.Data);
+            Assert.NotEqual(CORRECT_BLOCK_ID, block.Id);
+            Assert.NotEqual(_errorPositionedBlock.Length, block.Block.Data.Length);
+            Assert.NotEqual(_errorPositionedBlock, block.Block.Data);
         });
     }
 
@@ -149,9 +149,9 @@ public class LongKeyMemoryDataBlockTransformerTests
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
         "Полученный блок содержит неверные данные".x(() =>
         {
-            Assert.NotEqual(CORRECT_BLOCK_ID, block.BlockId);
-            Assert.NotEqual(_errorPositionedBlock.Length, block.Data.Length);
-            Assert.NotEqual(_errorPositionedBlock, block.Data);
+            Assert.NotEqual(CORRECT_BLOCK_ID, block.Id);
+            Assert.NotEqual(_errorPositionedBlock.Length, block.Block.Data.Length);
+            Assert.NotEqual(_errorPositionedBlock, block.Block.Data);
         });
     }
 
@@ -178,7 +178,7 @@ public class LongKeyMemoryDataBlockTransformerTests
 
         "Когда преобразуется в память".x(() => { exception = Record.Exception(() => { memory = ImplementationTransformer.ToMemory(block); }); });
         "Никаких ошибок не возникает".x(() => Assert.Null(exception));
-        "Полученная память нужного размера".x(() => Assert.Equal(memory.Length, LONG_SIZE + _existedDataBytes.Length));
+        "Полученная память нужного размера".x(() => Assert.Equal(memory.Length, TypeSizeConstants.LONG_SIZE + _existedDataBytes.Length));
     }
 
     [Scenario]

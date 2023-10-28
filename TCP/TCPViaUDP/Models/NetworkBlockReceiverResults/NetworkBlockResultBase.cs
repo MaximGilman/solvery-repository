@@ -1,6 +1,3 @@
 ﻿namespace TCPViaUDP.Models.NetworkBlockReceiverResults;
 
-public abstract class NetworkBlockResultBase
-{
-    public virtual bool IsEmpty { get; set; }
-}
+public abstract record NetworkBlockResultBase(bool IsEmpty);

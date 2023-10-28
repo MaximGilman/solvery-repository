@@ -29,13 +29,13 @@ public abstract class ConcurrentDataBlockWindow<TKey, TValue> : IConcurrentDataB
         {
             if (_blocksOnFly.Count >= _windowFrameSize)
             {
-                _logger.LogInformation("Block with id {id} was not added to window due to it's size exceeded", blockWithId.BlockId);
+                _logger.LogInformation("Block with id {id} was not added to window due to it's size exceeded", blockWithId.Id);
                 return false;
             }
 
 
-            _logger.LogInformation("Block with id {id} was added to window", blockWithId.BlockId);
-            _blocksOnFly.AddOrUpdate(blockWithId.BlockId, blockWithId.Data, (_, _) => blockWithId.Data);
+            _logger.LogInformation("Block with id {id} was added to window", blockWithId.Id);
+            _blocksOnFly.AddOrUpdate(blockWithId.Id, blockWithId.Block.Data, (_, _) => blockWithId.Block.Data);
             return true;
         }
     }

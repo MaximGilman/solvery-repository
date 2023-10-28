@@ -20,12 +20,12 @@ public class NetworkBlockSender : INetworkBlockSender<long, Memory<byte>>
     {
         try
         {
-            await _udpClient.SendAsync(dataBlockWithId.Data, cancellationToken);
-            _logger.LogInformation("Блок с ключем: {blockId} отправлен в сеть", dataBlockWithId.BlockId);
+            await _udpClient.SendAsync(dataBlockWithId.Block.Data, cancellationToken);
+            _logger.LogInformation("Блок с ключем: {blockId} отправлен в сеть", dataBlockWithId.Id);
         }
         catch (SocketException)
         {
-            _logger.LogError("{Message}", $"Произошлка ошибка при отправке блока {dataBlockWithId.BlockId}. Переотправка...");
+            _logger.LogError("{Message}", $"Произошлка ошибка при отправке блока {dataBlockWithId.Id}. Переотправка...");
         }
         catch (Exception exception)
         {

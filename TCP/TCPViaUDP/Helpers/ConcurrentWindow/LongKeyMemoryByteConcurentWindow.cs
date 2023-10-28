@@ -15,12 +15,12 @@ public class LongKeyMemoryByteConcurrentWindow : ConcurrentDataBlockWindowWithLa
     {
         Guard.IsNotDefault(blockWithId);
 
-        Guard.IsNotDefault(blockWithId.BlockId);
-        Guard.IsGreater(blockWithId.BlockId, 0);
+        Guard.IsNotDefault(blockWithId.Id);
+        Guard.IsGreater(blockWithId.Id, 0);
 
-        Guard.IsNotDefault(blockWithId.Data);
-        Guard.IsNotNull(blockWithId.Data);
-        Guard.IsNotEmpty(blockWithId.Data);
+        Guard.IsNotDefault(blockWithId.Block.Data);
+        Guard.IsNotNull(blockWithId.Block.Data);
+        Guard.IsNotEmpty(blockWithId.Block.Data);
 
         return base.TryAddBlock(blockWithId);
     }

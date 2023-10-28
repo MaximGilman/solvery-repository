@@ -53,7 +53,7 @@ public class ConcurrentDataBlockWindowTests
         "Когда добавляются элементы".x(() =>
         {
             var block1 = new LongKeyMemoryByteDataBlock(1, _value);
-            var block1WithSameKey = block1 with { Data = _value };
+            var block1WithSameKey = block1 with { Block = new DataBlock<Memory<byte>>(_value) };
 
             var isKeyAdded = _concurrentWindow.TryAddBlock(block1);
             var isKeyAddedAgain = _concurrentWindow.TryAddBlock(block1WithSameKey);

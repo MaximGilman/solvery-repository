@@ -24,6 +24,5 @@ public static class StringExtensions
 
         Guard.IsMatch(match.Value, GUID_REGEX);
         return Guid.Parse(match.Value);
-
     }
 }
