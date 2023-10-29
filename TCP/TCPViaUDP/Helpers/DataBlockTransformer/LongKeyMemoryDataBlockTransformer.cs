@@ -10,7 +10,7 @@ public static class LongKeyMemoryDataBlockTransformer
     /// Преобразовать информацию о блоке в массив байт.
     /// </summary>
     /// <param name="dataBlock">Информация о блоке.</param>
-    public static Memory<byte> ToMemory(LongKeyMemoryByteDataBlock dataBlock)
+    public static Memory<byte> ToMemory(DataBlockWithId<long, Memory<byte>> dataBlock)
     {
         Guard.IsNotDefault(dataBlock);
         Guard.IsNotNull(dataBlock);
@@ -46,6 +46,8 @@ public static class LongKeyMemoryDataBlockTransformer
         var dataArray = data.ToArray();
         Buffer.BlockCopy(blockIdBytes, 0, resultMemory, 0, blockIdBytes.Length);
         Buffer.BlockCopy(dataArray, 0, resultMemory, TypeSizeConstants.LONG_SIZE, dataArray.Length);
+
+        Guard.IsLessOrEqual(resultMemory.Length, NetworkConstants.MTU_DATA_BLOCK_MAX_BYTE_SIZE);
         return resultMemory;
     }
 

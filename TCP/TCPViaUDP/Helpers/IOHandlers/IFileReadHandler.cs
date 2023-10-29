@@ -10,5 +10,6 @@ public interface IFileReadHandler
     /// </summary>
     /// <param name="filePath"></param>
     /// <param name="bufferSize"></param>
-    public Task HandleAsync(string filePath, int bufferSize);
+    /// <param name="cancellationToken"></param>
+    public Task HandleAsync(string filePath, int bufferSize, CancellationToken cancellationToken);
 }

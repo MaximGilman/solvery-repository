@@ -1,18 +1,20 @@
 ﻿using System.Buffers;
 using Microsoft.Extensions.Logging;
 using Utils.Guards;
+using System;
 
 namespace TCPViaUDP.Helpers.IOHandlers;
 
 public class FileReadBlockHandler : IFileReadHandler
 {
     private readonly FileShare _fileShareOption;
-    private readonly Func<long, Memory<byte>, Task> _blockActionAsync;
+    private readonly Func<long, Memory<byte>, CancellationToken, Task> _blockActionAsync;
     private readonly AutoResetEvent _onCanAct;
     private readonly ArrayPool<byte> _arrayPool = ArrayPool<byte>.Create();
     private readonly ILogger<FileReadBlockHandler> _logger;
 
-    public FileReadBlockHandler(Func<long, Memory<byte>, Task> blockActionAsync, AutoResetEvent onCanAct, ILogger<FileReadBlockHandler> logger,
+    public FileReadBlockHandler(Func<long, Memory<byte>, CancellationToken, Task> blockActionAsync, AutoResetEvent onCanAct,
+        ILogger<FileReadBlockHandler> logger,
         FileShare fileShareOption = FileShare.None)
     {
         Guard.IsNotDefault(blockActionAsync);
@@ -23,7 +25,7 @@ public class FileReadBlockHandler : IFileReadHandler
         _fileShareOption = fileShareOption;
     }
 
-    public async Task HandleAsync(string filePath, int bufferSize)
+    public async Task HandleAsync(string filePath, int bufferSize, CancellationToken cancellationToken)
     {
         Guard.IsNotNullOrWhiteSpace(filePath);
         Guard.IsTrue(() => File.Exists(filePath), "Файл не существует");
@@ -41,7 +43,8 @@ public class FileReadBlockHandler : IFileReadHandler
                 var buffer = _arrayPool.Rent(bufferSize);
                 try
                 {
-                    var readBytes = await fs.ReadAsync(buffer);
+                    var bufferAsMemory = buffer.AsMemory(0, bufferSize);
+                    var readBytes = await fs.ReadAsync(bufferAsMemory, cancellationToken);
 
                     if (readBytes == 0)
                     {
@@ -50,7 +53,8 @@ public class FileReadBlockHandler : IFileReadHandler
                     }
                     else
                     {
-                        await _blockActionAsync(blockCounter,buffer);
+                        var actualData = bufferAsMemory[..readBytes];
+                        await _blockActionAsync(blockCounter, actualData, cancellationToken);
                         blockCounter++;
                     }
                 }

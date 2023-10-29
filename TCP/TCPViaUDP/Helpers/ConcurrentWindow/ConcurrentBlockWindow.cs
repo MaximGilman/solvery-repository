@@ -63,6 +63,15 @@ public abstract class ConcurrentBlockWindow<TKey, TValue> : IConcurrentBlockWind
         }
     }
 
+    public (TKey, TValue) GetFirstValueOrDefault()
+    {
+        lock (_lock)
+        {
+            var minKey = _blocksOnFly.Keys.Min();
+            return _blocksOnFly.Count == 0 ? default : (minKey, _blocksOnFly[minKey]);
+        }
+    }
+
     public virtual int GetCurrentCount()
     {
         lock (_lock)
@@ -71,20 +80,13 @@ public abstract class ConcurrentBlockWindow<TKey, TValue> : IConcurrentBlockWind
         }
     }
 
-    public virtual int GetWindowFrameSize()
-    {
-        lock (_lock)
-        {
-            return _windowFrameSize;
-        }
-    }
+    public virtual int GetWindowFrameSize() => _windowFrameSize;
 
     public virtual bool TryRemove(TKey blockId)
     {
         lock (_lock)
         {
             _logger.LogInformation("Block with id {id} was asked to remove from window", blockId);
-
             var isRemoved = _blocksOnFly.Remove(blockId, out _);
             if (isRemoved)
             {

@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging;
 
 namespace TCP.Utils;
 
-public  class TcpExceptionHandler
+public  class NetworkExceptionHandler
 {    private ILogger _logger { get; }
 
-    public TcpExceptionHandler(ILogger logger)
+    public NetworkExceptionHandler(ILogger logger)
     {
         _logger = logger;
     }

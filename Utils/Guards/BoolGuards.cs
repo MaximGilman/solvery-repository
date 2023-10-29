@@ -12,4 +12,15 @@ public partial class Guard
             throw new ArgumentException(errorMessage);
         }
     }
+
+    /// <summary>
+    /// Проверить, что предикат не выполняется.
+    /// </summary>
+    public static void IsFalse(Func<bool> predicate, string errorMessage)
+    {
+        if (predicate())
+        {
+            throw new ArgumentException(errorMessage);
+        }
+    }
 }

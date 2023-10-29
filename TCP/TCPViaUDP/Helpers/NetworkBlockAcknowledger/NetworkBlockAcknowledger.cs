@@ -10,13 +10,13 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
     private readonly TimeSpan _acknowledgmentDelay;
     private readonly int _maxErrorRetry;
 
-    private readonly Func<DataNetworkBlockResult, Task> _onReceived;
-    private readonly Func<EmptyNetworkBlockResult, Task> _onUnreceived;
+    private readonly Func<AcknowledgeNetworkBlockResult, CancellationToken, Task> _onReceived;
+    private readonly Func<EmptyNetworkBlockResult, CancellationToken, Task> _onUnreceived;
     private readonly ILogger<INetworkBlockAcknowledger> _logger;
     private int _retryCount;
 
-    public NetworkBlockAcknowledger(UdpClient udpClient, TimeSpan acknowledgmentDelay, int maxErrorRetry, Func<DataNetworkBlockResult, Task> onReceived,
-        Func<EmptyNetworkBlockResult, Task> onUnreceived, ILogger<INetworkBlockAcknowledger> logger)
+    public NetworkBlockAcknowledger(UdpClient udpClient, TimeSpan acknowledgmentDelay, int maxErrorRetry, Func<AcknowledgeNetworkBlockResult, CancellationToken, Task> onReceived,
+        Func<EmptyNetworkBlockResult, CancellationToken, Task> onUnreceived, ILogger<INetworkBlockAcknowledger> logger)
     {
         _udpClient = udpClient;
         _acknowledgmentDelay = acknowledgmentDelay;
@@ -34,13 +34,13 @@ public class NetworkBlockAcknowledger : INetworkBlockAcknowledger
             {
                 var result = await _udpClient.ReceiveAsync(cancellationToken).AsTask().WaitAsync(this._acknowledgmentDelay, cancellationToken);
                 // Отправить сообщение, что получили результат.
-                await _onReceived(new DataNetworkBlockResult(result.Buffer));
+                await _onReceived(new AcknowledgeNetworkBlockResult(result.Buffer), cancellationToken);
             }
             catch (TimeoutException)
             {
                 // Отправить сообщение, что было получено ничего.
                 // Залогировать что переповтор
-                await _onUnreceived(new EmptyNetworkBlockResult());
+                await _onUnreceived(new EmptyNetworkBlockResult(), cancellationToken);
                 _logger.LogInformation("За указанное время не было получено подтверждения. Переповторяю отправку.");
             }
             catch (Exception exception)

@@ -34,7 +34,7 @@ public abstract class AcknowledgedConcurrentBlockWindow<TKey, TValue> : Concurre
         }
     }
 
-    public virtual TKey GetLastAcknowledged()
+    public virtual TKey GetLastAcknowledgedKey()
     {
         lock (_lock)
         {

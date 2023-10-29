@@ -31,4 +31,21 @@ public class LongKeyMemoryByteAcknowledgedConcurrentBlockWindow : AcknowledgedCo
         Guard.IsGreater(blockId, 0);
         return base.TryRemove(blockId);
     }
+
+    /// <summary>
+    /// Удалить все ключи, до указанного.
+    /// </summary>
+    public bool TryRemoveUntil(long blockId)
+    {
+        Guard.IsNotDefault(blockId);
+        Guard.IsGreater(blockId, 0);
+
+        var keysToDelete = _blocksOnFly.Keys.Where(x => x < blockId);
+        var isSuccess = true;
+        foreach (var key in keysToDelete)
+        {
+            isSuccess = isSuccess && base.TryRemove(key);
+        }
+        return isSuccess;
+    }
 }

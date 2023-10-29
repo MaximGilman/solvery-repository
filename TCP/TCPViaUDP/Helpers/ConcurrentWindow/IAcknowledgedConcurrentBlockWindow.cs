@@ -7,5 +7,5 @@ public interface IAcknowledgedConcurrentBlockWindow<TKey, TValue> : IConcurrentB
     /// <summary>
     /// Получить последний подтвержденный ключ.
     /// </summary>
-    public TKey GetLastAcknowledged();
+    public TKey GetLastAcknowledgedKey();
 }

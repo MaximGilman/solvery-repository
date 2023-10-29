@@ -33,10 +33,13 @@ public interface IConcurrentBlockWindow<TKey, TValue> where TKey : INumber<TKey>
     public TValue GetValueOrDefault(TKey key);
 
     /// <summary>
+    /// Получить первое по порядку значение.
+    /// </summary>
+    public (TKey, TValue) GetFirstValueOrDefault();
+
+    /// <summary>
     /// Удалить значение по ключу.
     /// </summary>
     /// <param name="key">Ключ блока.</param>
     public bool TryRemove(TKey key);
-
-
 }
