@@ -8,7 +8,7 @@ using TCPViaUDP.Receiver;
 // File read handler можно рассмотреть цепочка ответственности. Только прочитать, не исправлять
 
 
-const int port = 60381;
+const int port = 60382;
 var loggingFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
 
 var receiver = new DataBlockReceiver(port, loggingFactory);
