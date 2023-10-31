@@ -21,7 +21,7 @@ public class DataBlockSender
     private readonly UdpClientWrapper _udpClientWrapper;
     private readonly INetworkBlockAcknowledger _blockAcknowledger;
 
-    // вынести куда-то
+    // TODO: вынести куда-то
     private const int WINDOW_SIZE = 2;
 
     public DataBlockSender(IPAddress remoteIp, int port, ILoggerFactory loggerFactory)
@@ -34,8 +34,8 @@ public class DataBlockSender
         _udpClientWrapper = new UdpClientWrapper(remoteIp, port, loggerFactory.CreateLogger<UdpClientWrapper>());
         _networkBlockSender = new NetworkBlockSender(_udpClientWrapper, loggerFactory.CreateLogger<NetworkBlockSender>());
 
-        // тут другой поди клиент?
-        // ожидание динамически
+        // TODO: тут другой поди клиент для локальных тестов завести
+        // TODO: ожидание должно динамически выбирать длительность
         _blockAcknowledger = new NetworkBlockAcknowledger(_udpClientWrapper.UdpClient, TimeSpan.FromSeconds(5), 5, this.OnAcknowledgeReceived, this.OnAcknowledgeUnreceived,
             loggerFactory.CreateLogger<NetworkBlockAcknowledger>());
     }

@@ -10,7 +10,6 @@ public class SequentialBlockSelector<TKey, TValue> : IBlockSelector<IEnumerable<
     private readonly Func<IEnumerable<TKey>> _getKeys;
     private readonly Func<IEnumerable<TKey>, IEnumerable<TValue>> _getValues;
     private TKey _currentBlockId = TKey.Zero;
-    //// Обсудить №4. Вероятно, есть лучшая стратегия сохранения на диск, чем последовательная. 
 
     public SequentialBlockSelector(Func<IEnumerable<TKey>> getKeys, Func<IEnumerable<TKey>, IEnumerable<TValue>> getValues)
     {
@@ -29,7 +28,7 @@ public class SequentialBlockSelector<TKey, TValue> : IBlockSelector<IEnumerable<
     {
         // Берем все ключи по порядку, пока берутся. Как только встречаем пробел в порядке ключей - останавливаемся.
         // 1, 2, 3, 4, 6, 7, 8 - возьмем 1 -4. Остальные пойдем загружать, когда появится 5й блок.
-        var keys = _getKeys().ToList();
+        var keys = _getKeys().Order().ToList();
         return keys.SkipWhile(n => n != _currentBlockId)
             .TakeWhile((n, i) => i == 0 || n == keys[keys.IndexOf(_currentBlockId) + i - 1] + TKey.One);
     }

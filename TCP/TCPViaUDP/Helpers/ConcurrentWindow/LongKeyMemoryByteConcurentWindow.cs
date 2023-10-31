@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using TCPViaUDP.Models;
 using TCPViaUDP.Models.DataBlocks;
 using Utils.Guards;
 
@@ -7,7 +6,8 @@ namespace TCPViaUDP.Helpers.ConcurrentWindow;
 
 public class LongKeyMemoryByteAcknowledgedConcurrentBlockWindow : AcknowledgedConcurrentBlockWindow<long, Memory<byte>>
 {
-    public LongKeyMemoryByteAcknowledgedConcurrentBlockWindow(int windowFrameSize, ILogger<AcknowledgedConcurrentBlockWindow<long, Memory<byte>>> logger) : base(windowFrameSize, logger)
+    public LongKeyMemoryByteAcknowledgedConcurrentBlockWindow(int windowFrameSize, ILogger<AcknowledgedConcurrentBlockWindow<long, Memory<byte>>> logger) :
+        base(windowFrameSize, logger)
     {
     }
 
@@ -39,13 +39,17 @@ public class LongKeyMemoryByteAcknowledgedConcurrentBlockWindow : AcknowledgedCo
     {
         Guard.IsNotDefault(blockId);
         Guard.IsGreater(blockId, 0);
-
-        var keysToDelete = _blocksOnFly.Keys.Where(x => x < blockId);
         var isSuccess = true;
-        foreach (var key in keysToDelete)
+
+        lock (_lock)
         {
-            isSuccess = isSuccess && base.TryRemove(key);
+            var keysToDelete = _blocksOnFly.Keys.Where(x => x < blockId);
+            foreach (var key in keysToDelete)
+            {
+                isSuccess = isSuccess && base.TryRemove(key);
+            }
         }
+
         return isSuccess;
     }
 }
